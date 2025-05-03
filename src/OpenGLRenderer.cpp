@@ -17,6 +17,9 @@ OpenGLRenderer::OpenGLRenderer(MeshData *_mesh_data, ArgParser *args) {
 
   // Initialize the MeshData
   setupVBOs();
+
+  // Initialize the sim
+  setupSim();
   
   glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
   glEnable(GL_DEPTH_TEST);
@@ -91,6 +94,7 @@ void OpenGLRenderer::drawVBOs(const glm::mat4 &mvp,const glm::mat4 &m,const glm:
   glUniform1i(wireframeID, mesh_data->wireframe);
 
   drawMesh();
+  drawSim();
   HandleGLError("leaving drawVBOs");
 }
 
@@ -132,6 +136,22 @@ void OpenGLRenderer::drawMesh() const {
 void OpenGLRenderer::cleanupMesh() {
   glDeleteBuffers(1, &VaoId);
   glDeleteBuffers(1, &VboId);
+}
+
+void OpenGLRenderer::setupSim() {
+    glia = new Glia();
+
+    GLOBAL_args->glia = glia;
+}
+
+void OpenGLRenderer::drawSim() const {
+    // step if running
+    if ((!OpenGLCanvas::sim_paused || OpenGLCanvas::sim_one_step)) {
+        glia->step();
+        OpenGLCanvas::sim_one_step = false;
+    }
+
+    // render the visualization
 }
 
 // ====================================================================

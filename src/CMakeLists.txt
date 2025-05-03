@@ -111,6 +111,8 @@ set (SRCS
   ${PROJECT_SOURCE_DIR}/meshdata.cpp
   ${PROJECT_SOURCE_DIR}/argparser.cpp
   ${PROJECT_SOURCE_DIR}/matrix.cpp
+  ${PROJECT_SOURCE_DIR}/neuron.cpp
+  ${PROJECT_SOURCE_DIR}/glia.cpp
   ${OS_SPECIFIC_FILES}
   )
 

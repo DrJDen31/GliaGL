@@ -44,6 +44,11 @@ public:
   static bool controlKeyPressed;
   static bool altKeyPressed;
   static bool superKeyPressed;
+  
+  // AI sim
+  static bool sim_paused;
+  static bool sim_one_step;
+  static bool visualize_sim;
 
   static void initialize(ArgParser *_args, MeshData *_mesh_data, OpenGLRenderer *_renderer);
 

@@ -10,6 +10,8 @@
 struct MeshData;
 class Mesh;
 
+class Glia;
+
 // ====================================================================
 // ====================================================================
 
@@ -31,6 +33,8 @@ public:
 
   Mesh *mesh;
   MeshData *mesh_data;
+
+  Glia* glia;
 };
 
 extern ArgParser *GLOBAL_args;

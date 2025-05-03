@@ -28,6 +28,11 @@ bool OpenGLCanvas::controlKeyPressed = false;
 bool OpenGLCanvas::altKeyPressed = false;
 bool OpenGLCanvas::superKeyPressed = false;
 
+// AI sim
+bool OpenGLCanvas::sim_paused = false;
+bool::OpenGLCanvas::sim_one_step = false;
+bool::OpenGLCanvas::visualize_sim = true;
+
 // ========================================================
 // Initialize all appropriate OpenGL variables, set
 // callback functions, and start the main event loop.
@@ -206,9 +211,19 @@ void OpenGLCanvas::keyboardCB(GLFWwindow* /*window*/, int key, int /*scancode*/,
       PackMesh();
       renderer->setupVBOs();
     } else if (key == 'g' || key == 'G') {
-      mesh_data->gouraud = !mesh_data->gouraud;
-      PackMesh();
-      renderer->setupVBOs();
+        mesh_data->gouraud = !mesh_data->gouraud;
+        PackMesh();
+        renderer->setupVBOs();
+    } else if (key == ' ') {
+        OpenGLCanvas::sim_one_step = true;
+    } else if (key == 'a' || key == 'A') {
+        OpenGLCanvas::sim_paused = false;
+    } else if (key == 'x' || key == 'X') {
+        OpenGLCanvas::sim_one_step = false;
+    } else if (key == 'v' || key == 'V') {
+        OpenGLCanvas::visualize_sim = true;
+    } else if (key == 'h' || key == 'H') {
+        OpenGLCanvas::visualize_sim = false;
     } else {
       std::cout << "UNKNOWN KEYBOARD INPUT  '" << (char)key << "'" << std::endl;
     }

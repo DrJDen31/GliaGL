@@ -5,6 +5,7 @@
 #include "OpenGLCanvas.h"
 #include "argparser.h"
 #include "meshdata.h"
+#include "glia.h"
 
 class OpenGLRenderer {
 
@@ -22,6 +23,8 @@ private:
   // private helper functions for VBOs
   void setupMesh();
   void drawMesh() const;
+  void setupSim();
+  void drawSim() const;
   void cleanupMesh();
 
   // REPRESENTATION
@@ -35,6 +38,8 @@ private:
   GLuint ViewMatrixID;
   GLuint ModelMatrixID;
   GLuint wireframeID;
+
+  Glia* glia;
 
 };
 
