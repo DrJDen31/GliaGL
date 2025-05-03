@@ -1,9 +1,9 @@
 cmake_minimum_required (VERSION 3.5)
-project (hw1)
+project (gliagl)
 
 ##########################################################################
 # EXECUTABLE NAME
-set(my_executable mesher)
+set(my_executable glia)
 
 
 
