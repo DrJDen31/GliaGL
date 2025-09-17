@@ -1,6 +1,9 @@
 #include <string>
 #include "neuron.h"
 
+#include <iostream>
+#include <fstream>
+
 /*
 Constructor
 
@@ -18,7 +21,7 @@ Neuron::Neuron(const std::string id,
                const float resting,
                const float balancer = 1,
                const int refractory = 0,
-               const int threshold = 0,
+               const float threshold = 0,
                const bool tick = true)
 {
     this->id = id;
@@ -119,6 +122,9 @@ Tick update, make any actions based on state of the cell
 */
 void Neuron::tick()
 {
+    // track fire status for training
+    this->just_fired = false;
+
     // update values
     this->value += this->delta;
     this->delta = this->on_deck;
@@ -152,6 +158,10 @@ Send a transmission to all connected cells
 */
 void Neuron::fire()
 {
+    // track for training
+    this->just_fired = true;
+
+    std::cout << id << " firing!" << std::endl;
     // for each connected cell
     for (std::map<std::string, std::pair<float, Neuron *>>::iterator itr = connections.begin(); itr != connections.end(); itr++)
     {

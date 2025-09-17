@@ -10,7 +10,7 @@ class Neuron
 {
 public:
     // constructors and destructor
-    Neuron(const std::string id, const int complexity, const float resting, const float balancer, const int refractory, const int threshold, const bool tick);
+    Neuron(const std::string id, const int complexity, const float resting, const float balancer, const int refractory, const float threshold, const bool tick);
     ~Neuron();
 
     // getters/setters
@@ -24,13 +24,23 @@ public:
     void receive(float transmission);
     void tick();
 
+    // training
+    const std::string &getId() const { return id; }
+    const std::map<std::string, std::pair<float, Neuron *>> &getConnections() const { return connections; }
+    void removeConnection(const std::string &to) { connections.erase(to); }
+    bool didFire() const { return just_fired; }
+
 private:
     // member variables
     float value;                                                   // represents the current voltage value of neuron
     float resting;                                                 // represents the resting voltage value
     float balancer;                                                // delta voltage towards resting each tick
-    float delta;
-    float on_deck;
+    float delta;                                                   // sum of changes from connected neurons firing on this one - to be applied this time step
+    float on_deck;                                                 // sum of changes from connected neurons firing on this one - to be applied next time step
+                                                                   /*
+                                                                   // on_deck acts as a buffer to ensure all neurons connected to this one get their changes in
+                                                                   // changes are then shifted into delta, then are applied
+                                                                   */
     int refractory;                                                // current refractory state of the cell
     int refractory_period;                                         // refractory period after each firing
     float threshold;                                               // voltage threshold at which the cell fires
@@ -39,6 +49,9 @@ private:
     std::string id;                                                // unique ID of the cell
     std::map<std::string, std::pair<float, Neuron *>> connections; // map of all cells whose dendrites receive from this cells axon
     // key is ID of the receiving cell, value is a pair containing the transmission and a pointer to the receiving cell
+
+    // training
+    bool just_fired = false; // states whether neuron fired this step
 
     // member functions
     void fire();
