@@ -1,0 +1,41 @@
+# 3-Class One-Hot Classification with Noise + Inhibitory Pool
+# Format: Lines starting with # are comments
+# NEURON <id> <threshold> <leak> <resting>
+# CONNECTION <from_id> <to_id> <weight>
+
+# Network structure:
+# S0, S1, S2 = sensory inputs (one-hot encoded classes)
+# N0 = inhibitory pool neuron
+# O0 = class 0 output
+# O1 = class 1 output
+# O2 = class 2 output
+
+# All neurons are now defined in config (fully self-contained)
+
+# Sensory neurons (will be stimulated externally)
+NEURON S0 100.0 1.0 0.0
+NEURON S1 100.0 1.0 0.0
+NEURON S2 100.0 1.0 0.0
+
+# Output neurons (define BEFORE pool so they process first)
+NEURON O0 50.0 1.0 0.0  # Class 0 output
+NEURON O1 50.0 1.0 0.0  # Class 1 output
+NEURON O2 50.0 1.0 0.0  # Class 2 output
+
+# Interneurons (process AFTER outputs for same-tick WTA)
+NEURON N0 30.0 0.8 0.0  # Inhibitory pool: LOWER threshold for faster WTA
+
+# Feedforward connections (sensory -> output)
+CONNECTION S0 O0 60.0
+CONNECTION S1 O1 60.0
+CONNECTION S2 O2 60.0
+
+# Output to pool connections
+CONNECTION O0 N0 35.0
+CONNECTION O1 N0 35.0
+CONNECTION O2 N0 35.0
+
+# Pool to output connections (inhibitory) - STRONGER for better suppression
+CONNECTION N0 O0 -55.0
+CONNECTION N0 O1 -55.0
+CONNECTION N0 O2 -55.0

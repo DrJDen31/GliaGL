@@ -1,0 +1,17 @@
+# Makefile for test sequence generator
+
+CXX = g++
+CXXFLAGS = -std=c++11 -O2
+
+all: generate_tests
+
+generate_tests: generate_tests.cpp
+	$(CXX) $(CXXFLAGS) -o generate_tests generate_tests.cpp
+
+clean:
+	rm -f generate_tests generate_tests.exe
+
+run: generate_tests
+	./generate_tests
+
+.PHONY: all clean run

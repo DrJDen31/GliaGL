@@ -1,0 +1,20 @@
+#version 330 core
+
+// Input vertex data
+layout(location = 0) in vec2 vertexPosition_screenspace;  // x,y in pixels
+layout(location = 1) in vec4 vertexColor;
+
+// Output to fragment shader
+out vec4 fragmentColor;
+
+// Uniforms
+uniform vec2 screenSize;  // Width and height in pixels
+
+void main(){
+    // Convert from pixel coordinates to normalized device coordinates [-1, 1]
+    vec2 ndc = (vertexPosition_screenspace / screenSize) * 2.0 - 1.0;
+    ndc.y = -ndc.y;  // Flip Y axis (screen space has origin top-left, NDC has origin center)
+    
+    gl_Position = vec4(ndc, 0.0, 1.0);
+    fragmentColor = vertexColor;
+}

@@ -1,0 +1,40 @@
+# Makefile for testing NetworkGraph (without full OpenGL renderer)
+
+CXX = g++
+CXXFLAGS = -std=c++11 -Wall -Wextra -O2 -I. -I../arch -Wno-unused-parameter
+TARGET = test_network_graph
+
+# Source files (minimal - no OpenGL dependencies)
+SRCS = test_network_graph.cpp \
+       neuron_particle.cpp \
+       network_graph.cpp \
+       ../arch/glia.cpp \
+       ../arch/neuron.cpp
+
+OBJS = $(SRCS:.cpp=.o)
+
+# Default target
+all: $(TARGET)
+
+# Link the executable
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+	@echo "Build complete! Run with: ./$(TARGET)"
+
+# Compile each source file
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Clean build artifacts
+clean:
+	rm -f $(OBJS) $(TARGET)
+	@echo "Clean complete"
+
+# Run the test
+run: $(TARGET)
+	./$(TARGET)
+
+# Rebuild from scratch
+rebuild: clean all
+
+.PHONY: all clean run rebuild
