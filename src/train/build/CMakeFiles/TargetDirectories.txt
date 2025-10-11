@@ -1,0 +1,3 @@
+/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/glia_eval.dir

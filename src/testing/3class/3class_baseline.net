@@ -1,0 +1,32 @@
+# 3-Class Baseline (Dysfunctional)
+# Purpose: Poorly wired network to test evaluation vs crafted 3-class network.
+# Characteristics:
+# - Direct S->O mapping for all classes with equal strength.
+# - No inhibitory pool neuron.
+# - Expect ambiguous winners under noise and poor separation.
+
+# NEURON <id> <threshold> <leak> <resting>
+# CONNECTION <from_id> <to_id> <weight>
+
+# Sensory
+NEURON S0 100.0 1.0 0.0
+NEURON S1 100.0 1.0 0.0
+NEURON S2 100.0 1.0 0.0
+
+# Outputs (no inhibitory pool)
+NEURON O0 50.0 1.0 0.0
+NEURON O1 50.0 1.0 0.0
+NEURON O2 50.0 1.0 0.0
+
+# Equal feedforward from all S* to all O* (intentionally wrong)
+CONNECTION S0 O0 60.0
+CONNECTION S0 O1 60.0
+CONNECTION S0 O2 60.0
+
+CONNECTION S1 O0 60.0
+CONNECTION S1 O1 60.0
+CONNECTION S1 O2 60.0
+
+CONNECTION S2 O0 60.0
+CONNECTION S2 O1 60.0
+CONNECTION S2 O2 60.0

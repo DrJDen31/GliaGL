@@ -1,4 +1,7 @@
-# Visualization System Fixes
+# [ARCHIVED] Visualization System Fixes
+This document is archived. See current visualization guides:
+- `docs/visualization/README.md`
+- `docs/BUILD_INSTRUCTIONS.md`
 
 ## Issues Fixed
 

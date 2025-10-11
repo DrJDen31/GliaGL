@@ -1,13 +1,6 @@
-#ifndef _INPUT_SEQUENCE_H_
-#define _INPUT_SEQUENCE_H_
-
-#include <vector>
-#include <map>
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <cctype>
+// Deprecated: input_sequence.h moved to src/arch/input_sequence.h.
+// Include the new path directly.
+#error "Do not include src/vis/input_sequence.h. Use src/arch/input_sequence.h instead."
 
 // =====================================================================================
 // InputSequence - Defines a sequence of sensory inputs over time for testing
@@ -137,4 +130,4 @@ private:
     bool loop;
 };
 
-#endif // _INPUT_SEQUENCE_H_
+// (Intentionally no include guard; this header should not be used.)

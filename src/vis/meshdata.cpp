@@ -12,7 +12,7 @@
 #include "network_graph.h"
 #include "glia.h"
 #include "input_control.h"
-#include "input_sequence.h"
+#include "../arch/input_sequence.h"
 #include "OpenGLCanvas.h"
 
 // ====================================================================

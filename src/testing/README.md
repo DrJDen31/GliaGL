@@ -29,7 +29,7 @@ testing/
 Tests the XOR function using:
 - 2 sensory neurons (S0, S1)
 - AND coincidence detector (N0) with leak=0
-- 2 output neurons (N1=XOR_true, N2=XOR_false)
+- 2 output neurons (O1=XOR_true, O0=XOR_false)
 - Inhibitory/excitatory connections for logic
 
 **Build:** `cd xor && make`  
@@ -43,31 +43,25 @@ All test examples use the core architecture components:
 
 ### output_detection.h (from `../arch/`)
 
-Provides `FiringRateTracker` class for monitoring and classifying neuron firing rates:
-
-**Features:**
-- **EMA tracking**: Exponential Moving Average smoothing
-- **Argmax classification**: Winner-take-all decision
-- **Margin computation**: Confidence metrics
-- **Rate queries**: Access to raw firing rates
+Provides `IOutputDetector` interface and a default `EMAOutputDetector` for monitoring
+and classifying neuron firing rates with exponential smoothing.
 
 **Usage Example:**
 ```cpp
 #include "../../arch/output_detection.h"
 
-FiringRateTracker tracker(0.05f);  // alpha = 1/20
+EMAOutputDetector detector(0.05f);
 
 // During simulation
-for (int t = 0; t < num_ticks; ++t)
-{
+for (int t = 0; t < num_ticks; ++t) {
     network.step();
-    tracker.update("N1", neuron1->didFire());
-    tracker.update("N2", neuron2->didFire());
+    detector.update("O1", neuron1->didFire());
+    detector.update("O0", neuron0->didFire());
 }
 
 // Classification
-std::string winner = tracker.argmax({"N1", "N2", "N3"});
-float margin = tracker.getMargin({"N1", "N2", "N3"});
+std::string winner = detector.predict({"O1", "O0"});
+float margin = detector.getMargin({"O1", "O0"});
 ```
 
 ---

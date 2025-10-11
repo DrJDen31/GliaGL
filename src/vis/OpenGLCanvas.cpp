@@ -4,7 +4,7 @@
 #include "OpenGLRenderer.h"
 #include "meshdata.h"
 #include "argparser.h"
-#include "input_sequence.h"
+#include "../arch/input_sequence.h"
 #include "input_control.h"
 #include "network_graph.h"
 

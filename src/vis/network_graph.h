@@ -33,8 +33,6 @@ public:
     int getNeuronVertexCount() const { return neuron_vertex_count; }
     const std::vector<std::string>& getOutputNeuronIDs() const { return output_neuron_ids; }
     NeuronParticle* getNeuronParticle(const std::string& id);
-    int getDefaultOutputIndex() const { return default_output_index; }
-    void setDefaultOutputIndex(int index) { default_output_index = index; }
     const std::string& getCurrentWinner() const { return current_winner; }
 
     // INITIALIZATION
@@ -98,8 +96,7 @@ private:
 
     // OUTPUT NEURON TRACKING
     std::vector<std::string> output_neuron_ids;      // IDs of output neurons
-    int default_output_index;                        // Index of default output (e.g., "false" for XOR)
-    FiringRateTracker output_tracker;                // Tracks firing rates to determine winner
+    EMAOutputDetector output_detector;               // Tracks firing rates to determine winner
     std::string current_winner;                      // Current winning output (from firing rate)
     
     // RENDERING VERTEX COUNTS (for separate draw calls)

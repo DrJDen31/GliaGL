@@ -17,13 +17,13 @@
  * @param rng Random number generator
  */
 void runTest(Glia &network, int true_class, float noise_prob, int num_ticks,
-             FiringRateTracker &tracker, const std::vector<std::string> &output_neurons,
+             EMAOutputDetector &detector, const std::vector<std::string> &output_neurons,
              std::mt19937 &rng)
 {
     std::cout << "\n=== Testing class " << true_class << " with " 
               << (noise_prob * 100.0f) << "% noise ===" << std::endl;
     
-    tracker.reset();
+    detector.reset();
     
     std::uniform_real_distribution<float> dist(0.0f, 1.0f);
     
@@ -56,7 +56,7 @@ void runTest(Glia &network, int true_class, float noise_prob, int num_ticks,
             Neuron *n = network.getNeuronById(id);
             if (n)
             {
-                tracker.update(id, n->didFire());
+                detector.update(id, n->didFire());
             }
         }
     }
@@ -74,10 +74,12 @@ void runTest(Glia &network, int true_class, float noise_prob, int num_ticks,
 
     // Print results
     std::cout << "Firing rates after " << num_ticks << " ticks:" << std::endl;
-    tracker.printRates(output_neurons);
+    for (const auto &id : output_neurons) {
+        std::cout << "  " << id << ": " << detector.getRate(id) << std::endl;
+    }
     
     // Get winner via argmax
-    std::string winner = tracker.argmax(output_neurons, "", 0.01f);
+    std::string winner = detector.predict(output_neurons);
     
     if (winner.empty())
     {
@@ -110,7 +112,7 @@ void runTest(Glia &network, int true_class, float noise_prob, int num_ticks,
     std::cout << "Expected class: " << true_class << std::endl;
     
     // Calculate margin (confidence)
-    float margin = tracker.getMargin(output_neurons);
+    float margin = detector.getMargin(output_neurons);
     std::cout << "Margin (confidence): " << margin << std::endl;
 }
 
@@ -129,8 +131,8 @@ int main()
     network.configureNetworkFromFile("3class_network.net");
     std::cout << std::endl;
 
-    // Set up firing rate tracker
-    FiringRateTracker tracker(0.05f);  // α = 1/20 ≈ 0.05
+    // Set up output detector (EMA)
+    EMAOutputDetector detector(0.05f);
     
     // Output neurons to monitor
     std::vector<std::string> output_neurons = {"O0", "O1", "O2"};
@@ -146,28 +148,28 @@ int main()
     std::cout << "\n========== Test Set 1: No Noise ==========" << std::endl;
     for (int c = 0; c < 3; ++c)
     {
-        runTest(network, c, 0.0f, num_ticks, tracker, output_neurons, rng);
+        runTest(network, c, 0.0f, num_ticks, detector, output_neurons, rng);
     }
 
     // Test 2: Low noise (5%)
     std::cout << "\n========== Test Set 2: 5% Noise ==========" << std::endl;
     for (int c = 0; c < 3; ++c)
     {
-        runTest(network, c, 0.05f, num_ticks, tracker, output_neurons, rng);
+        runTest(network, c, 0.05f, num_ticks, detector, output_neurons, rng);
     }
 
     // Test 3: Medium noise (10%)
     std::cout << "\n========== Test Set 3: 10% Noise ==========" << std::endl;
     for (int c = 0; c < 3; ++c)
     {
-        runTest(network, c, 0.10f, num_ticks, tracker, output_neurons, rng);
+        runTest(network, c, 0.10f, num_ticks, detector, output_neurons, rng);
     }
 
     // Test 4: High noise (20%)
     std::cout << "\n========== Test Set 4: 20% Noise ==========" << std::endl;
     for (int c = 0; c < 3; ++c)
     {
-        runTest(network, c, 0.20f, num_ticks, tracker, output_neurons, rng);
+        runTest(network, c, 0.20f, num_ticks, detector, output_neurons, rng);
     }
 
     std::cout << "\n=== Test Complete ===" << std::endl;

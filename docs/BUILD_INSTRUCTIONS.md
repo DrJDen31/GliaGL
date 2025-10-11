@@ -11,228 +11,36 @@
 - GLM (OpenGL Mathematics)
 - C++11 compatible compiler
 
-**Linux/WSL:**
 ```bash
-sudo apt-get update
-sudo apt-get install build-essential cmake
-sudo apt-get install libglfw3-dev libglew-dev libglm-dev
-sudo apt-get install xorg-dev libglu1-mesa-dev
-```
-
-**macOS:**
-```bash
-brew install cmake glfw glew glm
-```
-
-**Windows:**
-- Install Visual Studio 2019 or later
-- Install CMake
-- Libraries will be managed by vcpkg or manually
-
-### Building
-
-#### Linux / WSL with X11
-
-```bash
-# Navigate to visualization directory
-cd src/vis
-
-# Create build directory
+cd src/train
 mkdir build && cd build
-
-# Configure with CMake
-cmake ..
-
-# Build
-make
-
-# Run (example)
-./vis --network ../../../testing/xor/xor_network.net
-```
-
-#### macOS
-
-```bash
-cd src/vis
-mkdir build && cd build
-cmake ..
-make
-./vis --network ../../../testing/xor/xor_network.net
-```
-
-#### Windows (Visual Studio)
-
-```bash
-cd src\vis
-mkdir build
-cd build
 cmake ..
 cmake --build . --config Release
-.\Release\vis.exe --network ..\..\..\testing\xor\xor_network.net
 ```
 
-### Build Verification
+This produces `glia_eval` (or `glia_eval.exe`).
 
-If the build succeeds, you should see:
-```
--- The C compiler identification is ...
--- The CXX compiler identification is ...
--- Found OpenGL: ...
--- Found GLFW: ...
--- Found GLEW: ...
--- Configuring done
--- Generating done
--- Build files written to: ...
-```
-
-Then during compilation:
-```
-[ 10%] Building CXX object CMakeFiles/vis.dir/main.cpp.o
-[ 20%] Building CXX object CMakeFiles/vis.dir/argparser.cpp.o
-...
-[100%] Linking CXX executable vis
-[100%] Built target vis
-```
-
-### Testing Without Full Build
-
-If you're in an environment without OpenGL (like WSL without X11), you can test core components:
+### Usage
 
 ```bash
-cd src/vis
+# XOR crafted
+glia_eval[.exe] --scenario xor --default O0
 
-# Test basic neuron particle functionality
-make -f Makefile.simple
-./test_network_simple
+# XOR baseline (dysfunctional)
+glia_eval[.exe] --scenario xor --baseline --default O0
 
-# Expected output:
-# === NetworkGraph Simple Test ===
-# ✓ NeuronParticle test passed!
-# ✓ Network loading: ✓
-# ✓ Network execution: ✓
-# === All Tests Passed! ===
+# 3-class crafted with noise
+glia_eval[.exe] --scenario 3class --noise 0.10
+
+# Custom net
+glia_eval[.exe] --net ..\src\testing\xor\xor_network.net --default O0
 ```
 
-## Troubleshooting
-
-### CMake Can't Find Libraries
-
-**Error:**
-```
-Could not find a package configuration file provided by "GLFW"
-```
-
-**Solution (Linux/WSL):**
-```bash
-sudo apt-get install libglfw3-dev
-```
-
-**Solution (macOS):**
-```bash
-brew install glfw
-```
-
-**Solution (Windows):**
-Use vcpkg:
-```bash
-vcpkg install glfw3 glew glm
-cmake .. -DCMAKE_TOOLCHAIN_FILE=path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
-```
-
-### OpenGL Version Too Old
-
-**Error:**
-```
-OpenGL version 2.1 detected, but 3.3 required
-```
-
-**Solution:**
-- Update graphics drivers
-- Use software rendering (Mesa): `export LIBGL_ALWAYS_SOFTWARE=1`
-- Use a machine with newer GPU
-
-### WSL: No Display Available
-
-**Error:**
-```
-Failed to open GLFW window
-Cannot open display
-```
-
-**Solution:**
-1. Install X Server on Windows (VcXsrv or Xming)
-2. Export display:
-   ```bash
-   export DISPLAY=:0
-   ```
-3. Rerun the program
-
-### Link Errors with Arch Files
-
-**Error:**
-```
-undefined reference to `Glia::step()'
-```
-
-**Solution:**
-Ensure `CMakeLists.txt` includes:
-```cmake
-${PROJECT_SOURCE_DIR}/../arch/glia.cpp
-${PROJECT_SOURCE_DIR}/../arch/neuron.cpp
-```
-
-And:
-```cmake
-include_directories(${PROJECT_SOURCE_DIR}/../arch)
-```
-
-### Compilation Errors in network_graph.cpp
-
-**Error:**
-```
-no match for 'operator/' (operand types are 'Vec3f' and 'double')
-```
-
-**Solution:**
-This should be fixed in the latest version. If you encounter it:
-```cpp
-// Wrong:
-Vec3f dir = diff / length;
-
-// Correct:
-Vec3f dir = diff;
-dir /= float(length);
-```
-
-## Build Targets
-
-### Main Visualization
-
-**Target:** `vis`
-**Command:** `./vis --network path/to/network.net`
-**Purpose:** Full 3D visualization with OpenGL
-
-### Simple Test (No OpenGL)
-
-**Target:** `test_network_simple`
-**Command:** `make -f Makefile.simple && ./test_network_simple`
-**Purpose:** Test core NetworkGraph without rendering
-
-### Full Test (Requires OpenGL stubs)
-
-**Target:** `test_network_graph`
-**Command:** `make -f Makefile.test && ./test_network_graph`
-**Purpose:** Test full NetworkGraph including rendering data packing
-
-## File Structure After Build
-
-```
-src/vis/
-├── build/               # CMake build directory
-│   ├── vis              # Main executable (Linux/Mac)
-│   ├── vis.exe          # Main executable (Windows)
-│   └── CMakeFiles/      # Build artifacts
-├── *.cpp, *.h           # Source files
+Options:
+- `--warmup U` and `--window W` control ticks before decision and decision window
+- `--alpha A` sets EMA smoothing
+- `--threshold T` sets activity threshold
+- `--default ID` sets default output when below threshold (e.g., `O0`)
 ├── CMakeLists.txt       # Build configuration
 ├── Makefile.simple      # Minimal test build
 └── Makefile.test        # Full test build

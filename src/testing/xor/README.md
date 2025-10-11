@@ -15,8 +15,8 @@ The XOR network demonstrates that the manually configured network (before traini
 - **Sensory Neurons**: `S0`, `S1` (inputs)
 - **Interneurons**:
   - `N0` = `A` (AND detector with coincidence detection, leak=0)
-  - `N1` = `O1` (XOR true output)
-  - `N2` = `O0` (XOR false output)
+  - `O1` (XOR true output)
+  - `O0` (XOR false output)
 
 ### Configuration
 
@@ -30,7 +30,7 @@ The network is configured via `xor_network.net` with:
 - **xor_test.cpp**: Test harness that runs all XOR input combinations
 - **xor_network.net**: Network configuration file
 - **Makefile**: Build configuration (references arch/ for core classes)
-- **../../arch/output_detection.h**: Firing rate tracker for classification
+- **../../arch/output_detection.h**: Output detector (EMA) for classification
 - **../../arch/glia.cpp/h**: Network management class (creates/manages neurons)
 - **../../arch/neuron.cpp/h**: Individual spiking neuron implementation
 
@@ -82,8 +82,8 @@ The program will test all four XOR input combinations (00, 01, 10, 11) and displ
 1. **Configuration loading**: Shows neurons and connections being set up
 2. **For each input**:
    - Input pattern (e.g., "01")
-   - Firing rates for output neurons N1 (O1) and N2 (O0)
-   - Winner via argmax classification
+   - Firing rates for output neurons O1 (true) and O0 (false)
+   - Winner via argmax classification (EMA)
    - XOR result interpretation
    - Expected result for comparison
 
@@ -92,40 +92,26 @@ The program will test all four XOR input combinations (00, 01, 10, 11) and displ
 ```
 === Testing input: 01 ===
 Firing rates after 100 ticks:
-  N1: 0.500
-  N2: 0.490
-Winner (argmax): N1
+  O1: 0.500
+  O0: 0.490
+Winner (argmax): O1
 XOR Result: TRUE (1)
 Expected: TRUE (1)
 ```
 
 ### Expected Results
 
-- **00** → FALSE (N2 wins, both rates ≈0)
-- **01** → TRUE (N1 wins, rate ≈0.50)
-- **10** → TRUE (N1 wins, rate ≈0.50)
-- **11** → FALSE (N2 wins, rate ≈0.98)
+- **00** → FALSE (O0 wins, both rates ≈0)
+- **01** → TRUE (O1 wins, rate ≈0.50)
+- **10** → TRUE (O1 wins, rate ≈0.50)
+- **11** → FALSE (O0 wins, rate ≈0.98)
 
 ## Implementation Details
 
-### Firing Rate Tracking
+### Output Detection (EMA)
 
-The test uses an **Exponential Moving Average (EMA)** to track firing rates:
-
-```
-rate_k ← (1−α) × rate_k + α × [fired_k]
-```
-
-- **α = 0.05** (approximately 1/20 as suggested in TOY_EXAMPLES.md)
-- Updated every tick for each output neuron
-
-### Argmax Classification
-
-The winner is determined by selecting the output neuron with the highest firing rate:
-
-```cpp
-std::string winner = tracker.argmax({"N1", "N2"});
-```
+The test uses an **Exponential Moving Average (EMA)**-based detector to track rates and select the winning output.
+Alpha defaults to 0.05 (≈1/20). See `../../arch/output_detection.h` for API.
 
 ### Sensory Injection
 

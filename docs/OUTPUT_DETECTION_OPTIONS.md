@@ -12,16 +12,16 @@ The network produces output through specialized output neurons whose firing rate
 
 ---
 
-## Option 1: External Tracker Class (Current Implementation)
+## Option 1: External Detector Class (Current Implementation)
 
-**Location:** Separate class in application code (e.g., `FiringRateTracker` in `main.cpp`)
+**Location:** Header-only in `src/arch/output_detection.h` (`EMAOutputDetector` via `IOutputDetector`)
 
 ### Pros
 - **Separation of concerns**: Network simulation and output analysis are decoupled
-- **Flexibility**: Easy to swap different tracking strategies without modifying core network
-- **Multiple trackers**: Can run multiple detection strategies simultaneously for comparison
-- **No network modification**: Glia and Neuron classes remain focused on simulation
-- **Easy testing**: Can test different EMA alpha values, margin thresholds, etc.
+- **Flexibility**: Swap detection strategies without modifying core network
+- **Multiple detectors**: Can run multiple strategies side-by-side
+- **No network modification**: Glia/Neuron remain focused on simulation
+- **Easy testing**: Tune EMA alpha, threshold, defaults, margin, etc.
 
 ### Cons
 - **Manual neuron querying**: Must explicitly track which neurons to monitor
@@ -30,9 +30,20 @@ The network produces output through specialized output neurons whose firing rate
 
 ### Implementation Example
 ```cpp
-FiringRateTracker tracker(0.05f);  // α = 1/20
-tracker.update("N1", neuron->didFire());
-std::string winner = tracker.argmax(output_neurons);
+#include "src/arch/output_detection.h"
+
+OutputDetectorOptions opts; 
+opts.threshold = 0.01f;     // abstain below this
+opts.default_id = "O0";    // optional default when abstaining
+EMAOutputDetector det(0.05f, opts);
+
+// During sim
+det.update("O1", n1->didFire());
+det.update("O0", n0->didFire());
+
+// Classification
+std::string winner = det.predict({"O1","O0"});
+float margin = det.getMargin({"O1","O0"});
 ```
 
 ### Best For
@@ -196,7 +207,7 @@ private:
 
 ## Recommendation for This Project
 
-**For the XOR toy example and initial development**: **Option 1 (External Tracker)** is ideal.
+**For the XOR and 3-class toy examples and initial development**: **Option 1 (External Detector)** is ideal.
 
 **Reasons:**
 1. **Experimentation-friendly**: We're still testing different network configurations
@@ -249,11 +260,11 @@ std::vector<float> probs = softmax(rates);
 
 ## Implementation Notes
 
-### Current XOR Setup
-- Uses **Option 1** with `FiringRateTracker`
-- Monitors neurons `N1` (O1) and `N2` (O0)
-- EMA with α = 0.05 (approximately 1/20)
-- Simple argmax without margin checking
+### Current Setup
+- Uses **Option 1** with `EMAOutputDetector`
+- Monitors O* neurons (e.g., XOR: `O1` true, `O0` false)
+- EMA with α ≈ 0.05 and configurable threshold/default
+- Argmax + optional margin reporting
 
 ### Future Extensions
 1. Add margin checking to detect ambiguous cases

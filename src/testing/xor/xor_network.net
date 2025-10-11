@@ -7,8 +7,8 @@
 # Network structure:
 # S0, S1 = sensory inputs
 # N0 = A (AND detector)
-# N1 = O1 (XOR true output)
-# N2 = O0 (XOR false output)
+# O1 = XOR true output
+# O0 = XOR false output
 
 # Sensory neurons (default threshold, will be stimulated externally)
 NEURON S0 100.0 1.0 0.0
@@ -16,23 +16,22 @@ NEURON S1 100.0 1.0 0.0
 
 # Interneurons with specific thresholds
 NEURON N0 90.0 0.0 0.0  # A (AND) - use leak=0 for clean coincidence detection
-NEURON N1 50.0 1.0 0.0  # O1 (XOR true)
-NEURON N2 60.0 1.0 0.0  # O0 (XOR false)
+NEURON O1 50.0 1.0 0.0  # XOR true
+NEURON O0 60.0 1.0 0.0  # XOR false
 
 # Connections (weights from XOR spec)
-# S0, S1 -> O1 (N1)
-CONNECTION S0 N1 60.0
-CONNECTION S1 N1 60.0
+# S0, S1 -> O1
+CONNECTION S0 O1 60.0
+CONNECTION S1 O1 60.0
 
 # S0, S1 -> A (N0)
 CONNECTION S0 N0 60.0
 CONNECTION S1 N0 60.0
 
 # A -> O1 (inhibitory)
-CONNECTION N0 N1 -120.0
+CONNECTION N0 O1 -120.0
 
 # A -> O0 (excitatory)
-CONNECTION N0 N2 120.0
+CONNECTION N0 O0 120.0
 
-# Default output when network is quiet (XOR false = N2)
-DEFAULT_OUTPUT N2
+# No default output line; selection handled by detector

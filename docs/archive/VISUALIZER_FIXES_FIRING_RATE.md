@@ -1,4 +1,8 @@
-# Visualizer Fixes - Firing Rate Display
+# [ARCHIVED] Visualizer Fixes - Firing Rate Display
+This legacy doc referenced FiringRateTracker. The codebase now uses `EMAOutputDetector` via `src/arch/output_detection.h` with configurable `default_id` and `threshold`.
+See updated overview in `docs/OUTPUT_DETECTION_OPTIONS.md` and example usage in `src/testing/xor/xor_test.cpp`.
+
+## Original: Visualizer Fixes - Firing Rate Display
 
 ## Problem
 

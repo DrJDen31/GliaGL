@@ -12,7 +12,7 @@
 #include "network_graph.h"
 #include "glia.h"
 #include "input_control.h"
-#include "input_sequence.h"
+#include "../arch/input_sequence.h"
 
 #if __APPLE__
 #include "matrix.h"
@@ -110,7 +110,6 @@ void ArgParser::LoadNetwork() {
     glia = new Glia();  // Empty constructor
     
     // Load network configuration using full path directly
-    // This also reads DEFAULT_OUTPUT if specified in the file
     glia->configureNetworkFromFile(network_file_full_path);
     
     // Create NetworkGraph for visualization
@@ -121,21 +120,7 @@ void ArgParser::LoadNetwork() {
     input_controls = new InputControlManager();
     input_controls->initializeControls(sensory_ids, mesh_data->width, mesh_data->height);
     
-    // Configure default output from Glia (single source of truth)
-    std::string default_output_id = glia->getDefaultOutput();
-    if (!default_output_id.empty()) {
-      auto output_ids = network_graph->getOutputNeuronIDs();
-      for (size_t i = 0; i < output_ids.size(); i++) {
-        if (output_ids[i] == default_output_id) {
-          network_graph->setDefaultOutputIndex(i);
-          std::cout << "Default output for visualization: " << default_output_id 
-                    << " (index " << i << ")" << std::endl;
-          break;
-        }
-      }
-    } else {
-      std::cout << "No default output configured (will show nothing when network is quiet)" << std::endl;
-    }
+    // Default output handling removed; output selection handled by detector
     
     std::cout << "Network loaded and spatialized successfully" << std::endl;
     

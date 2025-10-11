@@ -45,24 +45,21 @@ Manages networks of neurons:
 
 ### Output Detection (`output_detection.h`)
 
-Provides firing rate tracking and classification for network outputs:
-- **FiringRateTracker**: Exponential Moving Average (EMA) tracking of neuron firing rates
-- **Argmax classification**: Winner-take-all decision making
-- **Margin computation**: Confidence metrics for classification quality
-- **Rate queries**: Access to individual and aggregate firing rates
+Provides a pluggable interface and default EMA-based output detector:
+- **IOutputDetector**: Abstract interface for output selection
+- **EMAOutputDetector**: Exponential Moving Average tracking + argmax selection
 
 **Key Features:**
 - Header-only implementation (no .cpp file needed)
-- Configurable smoothing factor (alpha parameter)
-- Handles tied outputs and edge cases
-- Suitable for both testing and production use
+- Configurable smoothing factor (alpha) and activity threshold
+- Margin and per-neuron rate queries
 
-**Key Methods:**
+**Key Methods (EMAOutputDetector):**
 - `update(id, fired)` - Update firing rate for a neuron
 - `getRate(id)` - Get current firing rate
-- `argmax(ids)` - Find neuron with highest rate
-- `getMargin(ids)` - Get confidence margin
-- `reset()` - Clear all tracked rates
+- `predict(ids)` - Winner via argmax with threshold abstention
+- `getMargin(ids)` - Confidence margin
+- `reset()` - Clear tracked rates
 
 **Network File Format (.net):**
 ```
@@ -120,7 +117,7 @@ for (int t = 0; t < 100; ++t)
     network.step();
     
     // Monitor output
-    Neuron* output = network.getNeuronById("N2");
+    Neuron* output = network.getNeuronById("O0");
     if (output->didFire())
     {
         std::cout << "Output fired at tick " << t << std::endl;

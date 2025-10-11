@@ -16,6 +16,7 @@ public:
 	// Constructors
 	Glia();
 	Glia(int num_sensory, int num_neurons);
+	~Glia();
 
 	// tick/step function
 	void step();
@@ -26,9 +27,6 @@ public:
 
 	// debug printing
 	void printNetwork();
-
-	// keeping the net synced
-	void syncBookkeepingFromNeurons();
 
 	// flatten neurons for training
 	template <class F>
@@ -48,9 +46,6 @@ public:
 	
 	// get all sensory neuron IDs
 	std::vector<std::string> getSensoryNeuronIDs() const;
-	
-	// get configured default output neuron (for winner-take-all when all outputs are silent)
-	const std::string& getDefaultOutput() const { return default_output_id; }
 
 private:
 	// vectors of neuron objects
@@ -59,18 +54,7 @@ private:
 	std::map<std::string, Neuron *> sensory_mapping;
 	std::map<std::string, Neuron *> neuron_mapping;
 
-	// mappings to represent network of neuron relationships
-	std::map<std::string, std::map<std::string, float>> sensory_network;
-	std::map<std::string, std::map<std::string, float>> neuron_network;
-	
-	// default output neuron ID (for winner-take-all when outputs are silent)
-	std::string default_output_id;
-
-	// helper function for debug print
-	void printNeuronMap(std::map<std::string, std::map<std::string, float>> map);
-
 	// helper function for config
 	void addConnection(std::string from_id, std::string to_id, float weight);
 };
-
 #endif

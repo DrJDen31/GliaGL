@@ -1,4 +1,8 @@
-# 3-Class Network Fixes - Complete Summary
+# [ARCHIVED] 3-Class Network Fixes - Complete Summary
+This historical fixes summary is archived. See current references:
+- `docs/TOY_EXAMPLES.md` for the 3-class spec
+- `src/arch/output_detection.h` for EMA detector
+- `docs/OUTPUT_DETECTION_OPTIONS.md` for selection strategy
 
 ## Issues Addressed
 

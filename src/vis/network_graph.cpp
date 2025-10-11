@@ -23,9 +23,7 @@ NetworkGraph::NetworkGraph(Glia* network, ArgParser *_args) {
     // Initialize vertex counts
     connection_vertex_count = 0;
     neuron_vertex_count = 0;
-    
-    // Initialize default output index (will be set after outputs are identified)
-    default_output_index = 0;
+
 
     // Spatial layout parameters
     x_left = -5.0f;
@@ -48,13 +46,7 @@ NetworkGraph::NetworkGraph(Glia* network, ArgParser *_args) {
     std::cout << "Computing bounding box..." << std::endl;
     computeBoundingBox();
     
-    // Default output index can be configured:
-    // -1 = no default (nothing selected when network is quiet)
-    // 0+ = specific output index to select as default
-    // For now, default to -1 (no selection when quiet)
-    default_output_index = -1;
-    std::cout << "Default output index: " << default_output_index 
-              << " (use setDefaultOutputIndex() to configure)" << std::endl;
+    // Output selection is handled by output_detector; no default index
     
     std::cout << "NetworkGraph constructor complete!" << std::endl;
 }
@@ -423,32 +415,23 @@ void NetworkGraph::updateActivationStates() {
     for (const auto& output_id : output_neuron_ids) {
         Neuron* n = glia->getNeuronById(output_id);
         if (n) {
-            output_tracker.update(output_id, n->didFire());
+            output_detector.update(output_id, n->didFire());
         }
     }
     
-    // Determine winner using firing rate with "sticky" behavior
+    // Determine winner using detector with "sticky" behavior
     // Winner only changes if a different output has higher rate
-    std::string candidate = output_tracker.argmax(output_neuron_ids, "", 0.01f);
-    
-    // If no current winner, use candidate (or default if candidate is empty)
+    std::string candidate = output_detector.predict(output_neuron_ids);
+
     if (current_winner.empty()) {
         if (!candidate.empty()) {
             current_winner = candidate;
-        } else {
-            // Use default output if configured
-            if (default_output_index >= 0 && default_output_index < (int)output_neuron_ids.size()) {
-                current_winner = output_neuron_ids[default_output_index];
-            }
         }
-    }
-    // If we have a current winner, only change if candidate is different AND has higher rate
-    else if (!candidate.empty() && candidate != current_winner) {
-        // Check if candidate actually has higher rate
-        float current_rate = output_tracker.getRate(current_winner);
-        float candidate_rate = output_tracker.getRate(candidate);
+    } else if (!candidate.empty() && candidate != current_winner) {
+        float current_rate = output_detector.getRate(current_winner);
+        float candidate_rate = output_detector.getRate(candidate);
         if (candidate_rate > current_rate) {
-            current_winner = candidate;  // Dethroned!
+            current_winner = candidate;
         }
     }
 }
