@@ -6,20 +6,6 @@
 
 #IncludeRegexTransform: 
 
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.cpp
-glia.h
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.h
-neuron.h
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/neuron.h
-vector
--
-iostream
--
-fstream
--
-sstream
--
-
 /mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.h
 vector
 -
@@ -42,16 +28,6 @@ sstream
 iostream
 -
 cctype
--
-
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/neuron.cpp
-string
--
-neuron.h
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/neuron.h
-iostream
--
-fstream
 -
 
 /mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/neuron.h
@@ -91,6 +67,12 @@ random
 -
 cstdlib
 -
+fstream
+-
+sstream
+-
+regex
+-
 ../arch/glia.h
 /mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.h
 ../arch/neuron.h
@@ -110,6 +92,16 @@ string
 vector
 -
 map
+-
+unordered_map
+-
+random
+-
+cmath
+-
+algorithm
+-
+iostream
 -
 ../arch/glia.h
 /mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.h

@@ -1,0 +1,31 @@
+{
+  "scenario": "xor",
+  "default": "O0",
+  "train": true,
+  "epochs": 20,
+  "batch": 4,
+  "shuffle": true,
+  "warmup": 20,
+  "window": 80,
+  "detector": { "alpha": 0.05, "threshold": 0.01, "default_id": "O0" },
+
+  "lr": 0.01,
+  "lambda": 0.95,
+  "weight_decay": 0.0001,
+  "margin": 0.0,
+  "reward_mode": "binary",
+  "reward_pos": 1.2,
+  "reward_neg": -0.8,
+
+  "jitter_std": 2.0,
+  "timing_jitter": 4,
+
+  "verbose": true,
+  "log_every": 1,
+  "seed": 123456,
+
+  "checkpoints_enable": true,
+  "ckpt_l0": 4,
+  "ckpt_l1": 2,
+  "ckpt_l2": 1
+}

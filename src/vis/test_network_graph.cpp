@@ -30,7 +30,7 @@ int main(int argc, const char* argv[]) {
     
     // Load configuration
     std::cout << "2. Loading XOR network configuration..." << std::endl;
-    network.configureNetworkFromFile("../../testing/xor/xor_network.net");
+    network.configureNetworkFromFile("../../examples/xor/xor_network.net");
     
     // Create NetworkGraph
     std::cout << "\n3. Building NetworkGraph from Glia..." << std::endl;

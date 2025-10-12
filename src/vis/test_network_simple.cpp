@@ -55,7 +55,7 @@ void testNetworkBuilding() {
     
     // Load configuration
     std::cout << "Loading configuration from file..." << std::endl;
-    network.configureNetworkFromFile("../../testing/xor/xor_network.net");
+    network.configureNetworkFromFile("../../examples/xor/xor_network.net");
     
     std::cout << "✓ Network loaded successfully!" << std::endl;
     

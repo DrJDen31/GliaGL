@@ -1,0 +1,10 @@
+{
+  "scenario": "xor",
+  "accuracy": 0.25,
+  "details": [
+    { "index": 0, "winner": "O0", "margin": 0 },
+    { "index": 1, "winner": "O0", "margin": 0.010986 },
+    { "index": 2, "winner": "O0", "margin": 0.0109857 },
+    { "index": 3, "winner": "O1", "margin": 0 }
+  ]
+}
