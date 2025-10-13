@@ -1,0 +1,38 @@
+{
+  "scenario": "perm3",
+  "baseline": true,
+  "train": true,
+  "epochs": 60,
+  "batch": 6,
+  "shuffle": true,
+  "warmup": 20,
+  "window": 100,
+  "noise": 0.08,
+  "n_per_class": 10,
+  "detector": { "alpha": 0.05, "threshold": 0.01, "default_id": "O0" },
+
+  "lr": 0.02,
+  "lambda": 0.95,
+  "weight_decay": 0.0001,
+  "margin": 0.0,
+  "reward_mode": "softplus_margin",
+  "reward_gain": 1.5,
+  "no_update_if_satisfied": true,
+  "use_advantage_baseline": true,
+  "baseline_beta": 0.1,
+  "elig_post_use_rate": true,
+  "weight_clip": 2.5,
+
+  "jitter_std": 0.02,
+  "timing_jitter": 3,
+
+  "verbose": true,
+  "log_every": 1,
+  "seed": 424242,
+
+  "checkpoints_enable": true,
+  "ckpt_l0": 6,
+  "ckpt_l1": 3,
+  "ckpt_l2": 2
+}
+

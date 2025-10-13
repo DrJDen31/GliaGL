@@ -1,0 +1,19 @@
+# Randomly initialized NEWNET for perm3 (temporal order, 6 classes)
+
+NEWNET S=3 H=24 O=6 POOL=0
+
+# Connectivity densities
+DENSITY S->H 0.6
+DENSITY S->O 0.7
+DENSITY H->H 0.2
+DENSITY H->O 0.9
+
+# Initialization
+INIT he
+EXCIT_RATIO 0.7
+W_SCALE 3.0
+
+# Neuron parameters
+THRESHOLDS S 100 H 45 O 20
+LEAK S 1.0 H 0.9 O 1.0
+

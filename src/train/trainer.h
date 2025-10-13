@@ -26,6 +26,9 @@ public:
     explicit Trainer(Glia &net) : glia(net), rng(123456u) {}
     void reseed(unsigned int s) { rng.seed(s); }
     bool revertCheckpoint() { return revertOneCheckpoint(); }
+    // Training history getters (copies)
+    std::vector<double> getEpochAccHistory() const { return epoch_acc_hist; }
+    std::vector<double> getEpochMarginHistory() const { return epoch_margin_hist; }
 
     // Evaluate a single episode using the provided input sequence and config.
     EpisodeMetrics evaluate(InputSequence &seq, const TrainingConfig &cfg) {
@@ -112,7 +115,9 @@ public:
                 for (const auto &kv : conns) {
                     const std::string &to_id = kv.first;
                     float &e = elig[key_for(from.getId(), to_id)];
-                    e = cfg.elig_lambda * e + (fired[from.getId()] ? 1.0f : 0.0f) * (fired[to_id] ? 1.0f : 0.0f);
+                    float pre = fired[from.getId()] ? 1.0f : 0.0f;
+                    float post = cfg.elig_post_use_rate ? neuron_rate[to_id] : (fired[to_id] ? 1.0f : 0.0f);
+                    e = cfg.elig_lambda * e + pre * post;
                 }
             });
 
@@ -127,15 +132,32 @@ public:
         m.ticks_run = U + W;
         if (out) *out = m;
 
-        // Reward selection: binary or margin-linear (clamped)
-        float reward = computeReward(m, cfg, target_id);
+        // Reward selection and shaping
+        float reward_raw = computeReward(m, cfg, target_id);
+        float reward = reward_raw;
+        if (cfg.use_advantage_baseline) {
+            float adv = reward_raw - reward_baseline;
+            reward_baseline = (1.0f - cfg.baseline_beta) * reward_baseline + cfg.baseline_beta * reward_raw;
+            reward = adv;
+        }
+        if (cfg.no_update_if_satisfied && m.winner_id == target_id && m.margin >= cfg.margin_delta) {
+            reward = 0.0f;
+        }
 
         // Build delta map for existing edges only.
         std::unordered_map<std::string, float> delta;
         glia.forEachNeuron([&](Neuron &from){
             const auto &conns = from.getConnections();
             for (const auto &kv : conns) {
-                const std::string k = key_for(from.getId(), kv.first);
+                const std::string &to_id = kv.first;
+                bool take = true;
+                if (cfg.update_gating == "winner_only") {
+                    if (!m.winner_id.empty()) take = (to_id == m.winner_id);
+                } else if (cfg.update_gating == "target_only") {
+                    take = (to_id == target_id);
+                }
+                if (!take) continue;
+                const std::string k = key_for(from.getId(), to_id);
                 float e = elig[k];
                 delta[k] += cfg.lr * reward * e;
                 if (usage_out) (*usage_out)[k] += e;
@@ -162,6 +184,10 @@ public:
                     w += scale * it->second;
                 }
                 w -= cfg.weight_decay * w;
+                if (cfg.weight_clip > 0.0f) {
+                    float c = cfg.weight_clip;
+                    if (w > c) w = c; else if (w < -c) w = -c;
+                }
                 from.setTransmitter(to_id, w);
             }
         });
@@ -409,7 +435,9 @@ public:
                 for (const auto &kv : conns) {
                     const std::string &to_id = kv.first;
                     float &e = elig[key_for(from.getId(), to_id)];
-                    e = cfg.elig_lambda * e + (fired[from.getId()] ? 1.0f : 0.0f) * (fired[to_id] ? 1.0f : 0.0f);
+                    float pre = fired[from.getId()] ? 1.0f : 0.0f;
+                    float post = cfg.elig_post_use_rate ? neuron_rate[to_id] : (fired[to_id] ? 1.0f : 0.0f);
+                    e = cfg.elig_lambda * e + pre * post;
                 }
             });
 
@@ -423,18 +451,38 @@ public:
         for (const auto &id : output_ids) m.rates[id] = detector.getRate(id);
         m.ticks_run = U + W;
 
-        float reward = computeReward(m, cfg, target_id);
+        float reward_raw = computeReward(m, cfg, target_id);
+        float reward = reward_raw;
+        if (cfg.use_advantage_baseline) {
+            float adv = reward_raw - reward_baseline;
+            reward_baseline = (1.0f - cfg.baseline_beta) * reward_baseline + cfg.baseline_beta * reward_raw;
+            reward = adv;
+        }
+        if (cfg.no_update_if_satisfied && m.winner_id == target_id && m.margin >= cfg.margin_delta) {
+            reward = 0.0f;
+        }
 
         std::vector<std::pair<std::string,std::string>> to_remove;
         glia.forEachNeuron([&](Neuron &from){
             const auto &conns = from.getConnections();
             for (const auto &kv : conns) {
                 const std::string &to_id = kv.first;
+                bool take = true;
+                if (cfg.update_gating == "winner_only") {
+                    if (!m.winner_id.empty()) take = (to_id == m.winner_id);
+                } else if (cfg.update_gating == "target_only") {
+                    take = (to_id == target_id);
+                }
+                if (!take) continue;
                 std::string k = key_for(from.getId(), to_id);
                 float w = kv.second.first;
                 float e = elig[k];
                 w += cfg.lr * reward * e;
                 w -= cfg.weight_decay * w;
+                if (cfg.weight_clip > 0.0f) {
+                    float c = cfg.weight_clip;
+                    if (w > c) w = c; else if (w < -c) w = -c;
+                }
                 from.setTransmitter(to_id, w);
                 if (std::fabs(w) < cfg.prune_epsilon) {
                     int c = prune_counter[k];
@@ -496,6 +544,7 @@ private:
     std::mt19937 rng;
     std::vector<double> epoch_acc_hist;
     std::vector<double> epoch_margin_hist;
+    float reward_baseline = 0.0f;
 
     struct EdgeRec { std::string from; std::string to; float w; };
     struct NeuronRec { std::string id; float thr; float leak; };
@@ -521,12 +570,23 @@ private:
     // Choose reward per config. Modes:
     //  - "binary": +reward_pos if (winner==target && margin>=delta) else reward_neg
     //  - "margin_linear": clamp(gain * target_margin, [reward_min, reward_max])
+    //  - "softplus_margin": sigma(gain * (delta - target_margin)) in [0,1]
     static inline float computeReward(const EpisodeMetrics &m, const TrainingConfig &cfg, const std::string &target_id) {
         if (cfg.reward_mode == "margin_linear") {
             float tm = targetMargin(m.rates, target_id);
             float r = cfg.reward_gain * tm;
             if (r < cfg.reward_min) r = cfg.reward_min;
             if (r > cfg.reward_max) r = cfg.reward_max;
+            return r;
+        }
+        if (cfg.reward_mode == "softplus_margin") {
+            float tm = targetMargin(m.rates, target_id);
+            float x = cfg.reward_gain * (cfg.margin_delta - tm);
+            float r = 1.0f / (1.0f + std::exp(-x));
+            if (cfg.reward_min < cfg.reward_max) {
+                if (r < cfg.reward_min) r = cfg.reward_min;
+                if (r > cfg.reward_max) r = cfg.reward_max;
+            }
             return r;
         }
         if (m.winner_id == target_id && m.margin >= cfg.margin_delta) return cfg.reward_pos;
@@ -642,4 +702,3 @@ private:
         }
     }
 };
-

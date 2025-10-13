@@ -1,3 +1,4 @@
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/edit_cache.dir
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/glia_eval.dir
+C:/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/glia_eval.dir
+C:/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/glia_miniworld.dir
+C:/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/ZERO_CHECK.dir

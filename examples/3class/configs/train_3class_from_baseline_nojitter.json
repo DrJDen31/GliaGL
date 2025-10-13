@@ -1,7 +1,7 @@
 {
   "scenario": "3class",
   "train": true,
-  "epochs": 15,
+  "epochs": 80,
   "batch": 3,
   "shuffle": true,
   "warmup": 20,
@@ -9,15 +9,19 @@
   "noise": 0.10,
   "detector": { "alpha": 0.05, "threshold": 0.01, "default_id": "" },
 
-  "lr": 0.01,
+  "lr": 0.02,
   "lambda": 0.95,
   "weight_decay": 0.0001,
   "margin": 0.0,
-  "reward_mode": "binary",
-  "reward_pos": 1.2,
-  "reward_neg": -0.8,
+  "reward_mode": "softplus_margin",
+  "reward_gain": 1.5,
+  "no_update_if_satisfied": true,
+  "use_advantage_baseline": true,
+  "baseline_beta": 0.1,
+  "elig_post_use_rate": true,
+  "weight_clip": 2.5,
 
-  "jitter_std": 0.0,
+  "jitter_std": 0.02,
   "timing_jitter": 0,
 
   "verbose": true,

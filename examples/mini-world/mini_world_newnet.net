@@ -1,0 +1,23 @@
+# NEWNET configuration for Mini-World (32x32, ON/OFF => 2048 sensory)
+# - 2048 sensory (S), 2048 hidden (H), 5 outputs (O0..O4)
+# - Includes an inhibitory pool neuron (N0) for soft WTA among outputs
+# - Densities are kept modest to keep training manageable
+
+NEWNET S=2048 H=1536 O=5 POOL=1
+
+# Connectivity densities (probabilities)
+# Keep S->H low to reduce massive edge counts; H->O higher for readout
+DENSITY S->H 0.02
+DENSITY S->O 0.005
+DENSITY H->H 0.1
+DENSITY H->O 0.25
+
+# Initialization scheme and signs
+INIT he
+EXCIT_RATIO 0.8
+W_SCALE 50
+
+# Neuron parameters
+THRESHOLDS S 100 H 40 O 45
+LEAK S 1.0 H 0.85 O 1.0
+

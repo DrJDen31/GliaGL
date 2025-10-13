@@ -1,9 +1,6 @@
-# 3-Class Baseline (Dysfunctional)
-# Purpose: Poorly wired network to test evaluation vs crafted 3-class network.
-# Characteristics:
-# - Direct S->O mapping for all classes with equal strength.
-# - No inhibitory pool neuron.
-# - Expect ambiguous winners under noise and poor separation.
+# 3-Class Baseline (Structured, Trainable)
+# Purpose: Same topology as the crafted 3-class net (includes inhibitory pool),
+# with neutral weights that allow training to sculpt robust WTA behavior.
 
 # NEURON <id> <threshold> <leak> <resting>
 # CONNECTION <from_id> <to_id> <weight>
@@ -13,28 +10,30 @@ NEURON S0 100.0 1.0 0.0
 NEURON S1 100.0 1.0 0.0
 NEURON S2 100.0 1.0 0.0
 
-# Outputs (no inhibitory pool)
+# Outputs (include pool N0 for WTA)
 NEURON O0 50.0 1.0 0.0
 NEURON O1 50.0 1.0 0.0
 NEURON O2 50.0 1.0 0.0
+NEURON N0 40.0 0.8 0.0  # inhibitory pool (stronger WTA after training)
 
-# Equal feedforward from all S* to all O* (intentionally wrong)
-CONNECTION S0 O0 60.0
-CONNECTION S0 O1 60.0
-CONNECTION S0 O2 60.0
+# Symmetric feedforward: equal drive to all outputs (chance-like start)
+CONNECTION S0 O0 35.0
+CONNECTION S0 O1 35.0
+CONNECTION S0 O2 35.0
 
-CONNECTION S1 O0 60.0
-CONNECTION S1 O1 60.0
-CONNECTION S1 O2 60.0
+CONNECTION S1 O0 35.0
+CONNECTION S1 O1 35.0
+CONNECTION S1 O2 35.0
 
-CONNECTION S2 O0 60.0
-CONNECTION S2 O1 60.0
-CONNECTION S2 O2 60.0
+CONNECTION S2 O0 35.0
+CONNECTION S2 O1 35.0
+CONNECTION S2 O2 35.0
 
-# Mutual inhibition (winner-take-all)
-CONNECTION O0 O1 -8.0
-CONNECTION O1 O0 -8.0
-CONNECTION O0 O2 -8.0
-CONNECTION O2 O0 -8.0
-CONNECTION O1 O2 -8.0
-CONNECTION O2 O1 -8.0
+# Pool wiring (moderate WTA to enable separation during training)
+CONNECTION O0 N0 20.0
+CONNECTION O1 N0 20.0
+CONNECTION O2 N0 20.0
+
+CONNECTION N0 O0 -25.0
+CONNECTION N0 O1 -25.0
+CONNECTION N0 O2 -25.0

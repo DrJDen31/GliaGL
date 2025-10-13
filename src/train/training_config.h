@@ -23,18 +23,29 @@ struct TrainingConfig {
     float margin_delta = 0.05f;
     float reward_pos = 1.2f;
     float reward_neg = -0.8f;
-    std::string reward_mode = "binary"; // "binary" | "margin_linear"
+    std::string reward_mode = "softplus_margin"; // default to smooth margin shaping
     float reward_gain = 1.0f;
     float reward_min = -1.0f;
     float reward_max = 1.0f;
+    // Update gating: "none" | "winner_only" | "target_only"
+    std::string update_gating = "none";
+    // New reward shaping and gating options
+    // Modes: "binary", "margin_linear", "softplus_margin"
+    bool no_update_if_satisfied = true; // if true and margin>=delta with correct winner, suppress update
+    bool use_advantage_baseline = true;  // center reward by subtracting EMA baseline
+    float baseline_beta = 0.1f;           // EMA factor for baseline update
     float r_target = 0.05f;
     float rate_alpha = 0.05f;
+    // Eligibility variant: if true, use post EMA rate instead of post spike indicator
+    bool elig_post_use_rate = true;
     float eta_theta = 0.0f;
     float eta_leak = 0.0f;
     float prune_epsilon = 1e-4f;
     int prune_patience = 3;
     int grow_edges = 0;
     float init_weight = 0.01f;
+    // Optional clipping of weights after each update (0 = disabled)
+    float weight_clip = 0.0f;
 
     // Batch/Epoch training
     int batch_size = 1;             // number of episodes per batch
@@ -66,5 +77,6 @@ struct TrainingConfig {
     std::string revert_metric = "accuracy"; // "accuracy" | "margin"
     int revert_window = 1;           // window size for comparison (currently 1 = compare prev vs current)
     float revert_drop = 0.2f;        // drop threshold (e.g., 0.2 accuracy drop or 0.05 margin drop)
-};
 
+    
+};

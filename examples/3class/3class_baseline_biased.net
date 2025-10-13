@@ -1,0 +1,40 @@
+# 3-Class Baseline (Biased, Trainable)
+# Purpose: Near-chance start with a tiny class-aligned bias to break symmetry,
+# while remaining trainable to high accuracy with the descent-like trainer.
+
+# NEURON <id> <threshold> <leak> <resting>
+# CONNECTION <from_id> <to_id> <weight>
+
+# Sensory
+NEURON S0 100.0 1.0 0.0
+NEURON S1 100.0 1.0 0.0
+NEURON S2 100.0 1.0 0.0
+
+# Outputs and pool
+NEURON O0 50.0 1.0 0.0
+NEURON O1 50.0 1.0 0.0
+NEURON O2 50.0 1.0 0.0
+NEURON N0 40.0 0.8 0.0  # inhibitory pool
+
+# Tiny class-aligned bias in feedforward (≈ +0.2 over cross)
+CONNECTION S0 O0 35.2
+CONNECTION S0 O1 35.0
+CONNECTION S0 O2 35.0
+
+CONNECTION S1 O0 35.0
+CONNECTION S1 O1 35.2
+CONNECTION S1 O2 35.0
+
+CONNECTION S2 O0 35.0
+CONNECTION S2 O1 35.0
+CONNECTION S2 O2 35.2
+
+# Pool wiring (moderate; allows WTA during/after training)
+CONNECTION O0 N0 20.0
+CONNECTION O1 N0 20.0
+CONNECTION O2 N0 20.0
+
+CONNECTION N0 O0 -25.0
+CONNECTION N0 O1 -25.0
+CONNECTION N0 O2 -25.0
+

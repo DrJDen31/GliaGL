@@ -1,0 +1,23 @@
+{
+  "out": "../data/run2",
+  "seed": 2,
+  "clips": 200,
+  "width": 32,
+  "height": 32,
+  "fps": 200.0,
+  "duration_s": 3.0,
+  "bin_ms": 10,
+  "event_threshold": 0.12,
+  "polarity": "both",
+  "max_events_per_bin": null,
+  "max_objects": 4,
+  "size_min": 3,
+  "size_max": 6,
+  "speed_min": 20.0,
+  "speed_max": 80.0,
+  "brightness_min": 0.6,
+  "brightness_max": 1.0,
+  "bg_drift": 0.0,
+  "id_prefix": "S",
+  "injection_scale": 200.0
+}

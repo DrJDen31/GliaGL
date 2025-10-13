@@ -1,0 +1,12 @@
+{
+  "scenario": "perm3",
+  "accuracy": 0,
+  "details": [
+    { "index": 0, "winner": "", "margin": 4.33826e-05 },
+    { "index": 1, "winner": "", "margin": 1.6644e-07 },
+    { "index": 2, "winner": "O4", "margin": 0.00124002 },
+    { "index": 3, "winner": "", "margin": 0.000175471 },
+    { "index": 4, "winner": "", "margin": 8.11262e-07 },
+    { "index": 5, "winner": "", "margin": 2.81484e-06 }
+  ]
+}

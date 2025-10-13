@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <regex>
+#include <algorithm>
 
 #include "../arch/glia.h"
 #include "../arch/neuron.h"
@@ -44,6 +45,7 @@ struct Args {
     int batch = -1;
     int shuffle = -1; // -1 = default, 0 = false, 1 = true
     std::string reward_mode;   // "binary" | "margin_linear"
+    std::string update_gating; // "none" | "winner_only" | "target_only"
     float reward_gain = -9999.0f;
     float reward_min = -9999.0f;
     float reward_max = -9999.0f;
@@ -72,12 +74,21 @@ struct Args {
     // Jitter
     float jitter_std = -1.0f;   // weight jitter stddev
     int timing_jitter = -1;     // max onset jitter (ticks)
+    // New training options
+    int no_update_if_satisfied = -1; // 0/1
+    int use_advantage_baseline = -1; // 0/1
+    float baseline_beta = -1.0f;
+    int elig_post_use_rate = -1; // 0/1
+    float weight_clip = -1.0f;
+    std::string save_net;        // path to save trained net (after training)
+    std::string train_metrics_json; // path to save per-epoch metrics JSON
+    int n_per_class = 1;         // dataset size per class for built-in scenarios
 };
 
 static void print_usage(const char* prog) {
     std::cout << "Usage:\n"
-              << "  " << prog << " [--argfile PATH | --config PATH.json] --net <path> [--warmup U --window W --alpha A --threshold T --default ID] [--train --epochs E [--batch B --shuffle 0|1 --lr L --lambda B --weight_decay D --margin M --reward_mode MODE --reward_gain G --reward_min A --reward_max B --reward_pos RP --reward_neg RN --r_target RT --rate_alpha RA --eta_theta ET --eta_leak EL --prune_eps PE --prune_patience PP --grow_edges G --init_weight IW --usage_boost_gain G --inactive_rate_threshold T --inactive_rate_patience P --prune_inactive_max K --prune_inactive_out 0|1 --prune_inactive_in 0|1 --checkpoints_enable 0|1 --ckpt_l0 N --ckpt_l1 N --ckpt_l2 N --revert_enable 0|1 --revert_metric accuracy|margin --revert_window N --revert_drop F --jitter_std F --timing_jitter N --verbose 0|1 --log_every N --seed S --dataset PATH --metrics_json PATH]]\n"
-              << "  " << prog << " --scenario xor|3class [--baseline] [--warmup U --window W --alpha A --threshold T --default ID --noise P] [--train --epochs E --batch B --shuffle 0|1 [...hyperparams...]]\n"
+              << "  " << prog << " [--argfile PATH | --config PATH.json] --net <path> [--warmup U --window W --alpha A --threshold T --default ID] [--train --epochs E [--batch B --shuffle 0|1 --lr L --lambda B --weight_decay D --margin M --reward_mode MODE --update_gating none|winner_only|target_only --reward_gain G --reward_min A --reward_max B --reward_pos RP --reward_neg RN --r_target RT --rate_alpha RA --eta_theta ET --eta_leak EL --prune_eps PE --prune_patience PP --grow_edges G --init_weight IW --usage_boost_gain G --inactive_rate_threshold T --inactive_rate_patience P --prune_inactive_max K --prune_inactive_out 0|1 --prune_inactive_in 0|1 --checkpoints_enable 0|1 --ckpt_l0 N --ckpt_l1 N --ckpt_l2 N --revert_enable 0|1 --revert_metric accuracy|margin --revert_window N --revert_drop F --jitter_std F --timing_jitter N --verbose 0|1 --log_every N --seed S --dataset PATH --metrics_json PATH]]\n"
+              << "  " << prog << " --scenario xor|3class|perm3 [--baseline] [--warmup U --window W --alpha A --threshold T --default ID --noise P --n_per_class N] [--train --epochs E --batch B --shuffle 0|1 [...hyperparams...]]\n"
               << "\nExamples:\n"
               << "  " << prog << " --scenario xor --baseline --default O0\n"
               << "  " << prog << " --net ..\\examples\\3class\\3class_network.net --noise 0.1\n";
@@ -94,6 +105,25 @@ static bool read_argfile(const std::string &path, std::vector<std::string> &toke
         while (iss >> tok) tokens.push_back(tok);
     }
     return true;
+}
+
+// Write simple training metrics JSON (epochs, accuracy[], margin[])
+static void write_metrics_json(const std::string &path,
+                               const std::vector<double> &acc,
+                               const std::vector<double> &margin,
+                               int epochs)
+{
+    std::ofstream jf(path.c_str(), std::ios::out | std::ios::trunc);
+    if (!jf.is_open()) return;
+    jf << "{\n";
+    jf << "  \"epochs\": " << epochs << ",\n";
+    jf << "  \"accuracy\": [";
+    for (size_t i = 0; i < acc.size(); ++i) { jf << acc[i]; if (i + 1 < acc.size()) jf << ","; }
+    jf << "],\n";
+    jf << "  \"margin\": [";
+    for (size_t i = 0; i < margin.size(); ++i) { jf << margin[i]; if (i + 1 < margin.size()) jf << ","; }
+    jf << "]\n";
+    jf << "}\n";
 }
 
 static bool load_manifest(const std::string &path, std::vector<Trainer::EpisodeData> &out) {
@@ -181,6 +211,7 @@ static bool parse_config_json(const std::string &path, Args &a) {
     extract_float_kv(s,  "weight_decay", a.weight_decay);
     extract_float_kv(s,  "margin", a.margin_delta);
     extract_string_kv(s, "reward_mode", a.reward_mode);
+    extract_string_kv(s, "update_gating", a.update_gating);
     extract_float_kv(s,  "reward_gain", a.reward_gain);
     extract_float_kv(s,  "reward_min", a.reward_min);
     extract_float_kv(s,  "reward_max", a.reward_max);
@@ -201,6 +232,7 @@ static bool parse_config_json(const std::string &path, Args &a) {
     extract_uint_kv(s,   "seed", a.seed);
     extract_string_kv(s, "dataset", a.dataset);
     extract_string_kv(s, "metrics_json", a.metrics_json);
+    extract_int_kv(s,    "n_per_class", a.n_per_class);
     extract_float_kv(s,  "usage_boost_gain", a.usage_boost_gain);
     extract_float_kv(s,  "inactive_rate_threshold", a.inactive_rate_threshold);
     extract_int_kv(s,    "inactive_rate_patience", a.inactive_rate_patience);
@@ -217,6 +249,13 @@ static bool parse_config_json(const std::string &path, Args &a) {
     extract_float_kv(s,  "revert_drop", a.revert_drop);
     extract_float_kv(s,  "jitter_std", a.jitter_std);
     extract_int_kv(s,    "timing_jitter", a.timing_jitter);
+    { bool b; if (extract_bool_kv(s, "no_update_if_satisfied", b)) a.no_update_if_satisfied = b ? 1 : 0; }
+    { bool b; if (extract_bool_kv(s, "use_advantage_baseline", b)) a.use_advantage_baseline = b ? 1 : 0; }
+    extract_float_kv(s,  "baseline_beta", a.baseline_beta);
+    { bool b; if (extract_bool_kv(s, "elig_post_use_rate", b)) a.elig_post_use_rate = b ? 1 : 0; }
+    extract_float_kv(s,  "weight_clip", a.weight_clip);
+    extract_string_kv(s, "save_net", a.save_net);
+    extract_string_kv(s, "train_metrics_json", a.train_metrics_json);
 
     // Nested detector object is optional
     size_t pos = s.find("\"detector\"");
@@ -271,6 +310,7 @@ static bool parse_args(int argc, const char* argv[], Args &a) {
         else if (k == "--batch") { std::string v; if (!next(v)) return false; a.batch = std::atoi(v.c_str()); }
         else if (k == "--shuffle") { std::string v; if (!next(v)) return false; a.shuffle = std::atoi(v.c_str()); }
         else if (k == "--reward_mode") { if (!next(a.reward_mode)) return false; }
+        else if (k == "--update_gating") { if (!next(a.update_gating)) return false; }
         else if (k == "--reward_gain") { std::string v; if (!next(v)) return false; a.reward_gain = std::atof(v.c_str()); }
         else if (k == "--reward_min") { std::string v; if (!next(v)) return false; a.reward_min = std::atof(v.c_str()); }
         else if (k == "--reward_max") { std::string v; if (!next(v)) return false; a.reward_max = std::atof(v.c_str()); }
@@ -295,6 +335,14 @@ static bool parse_args(int argc, const char* argv[], Args &a) {
         else if (k == "--revert_drop") { std::string v; if (!next(v)) return false; a.revert_drop = std::atof(v.c_str()); }
         else if (k == "--jitter_std") { std::string v; if (!next(v)) return false; a.jitter_std = std::atof(v.c_str()); }
         else if (k == "--timing_jitter") { std::string v; if (!next(v)) return false; a.timing_jitter = std::atoi(v.c_str()); }
+        else if (k == "--no_update_if_satisfied") { std::string v; if (!next(v)) return false; a.no_update_if_satisfied = std::atoi(v.c_str()); }
+        else if (k == "--use_advantage_baseline") { std::string v; if (!next(v)) return false; a.use_advantage_baseline = std::atoi(v.c_str()); }
+        else if (k == "--baseline_beta") { std::string v; if (!next(v)) return false; a.baseline_beta = std::atof(v.c_str()); }
+        else if (k == "--elig_post_use_rate") { std::string v; if (!next(v)) return false; a.elig_post_use_rate = std::atoi(v.c_str()); }
+        else if (k == "--weight_clip") { std::string v; if (!next(v)) return false; a.weight_clip = std::atof(v.c_str()); }
+        else if (k == "--save_net") { if (!next(a.save_net)) return false; }
+        else if (k == "--train_metrics_json") { if (!next(a.train_metrics_json)) return false; }
+        else if (k == "--n_per_class") { std::string v; if (!next(v)) return false; a.n_per_class = std::atoi(v.c_str()); }
         else { std::cerr << "Unknown arg: " << k << "\n"; return false; }
     }
     if (a.net_path.empty() && a.scenario.empty()) return false;
@@ -331,6 +379,77 @@ static InputSequence build_3class_sequence(int cls, int total_ticks, float noise
         for (int c = 0; c < 3; ++c) {
             if (c == cls) continue;
             if (dist(rng) < noise) seq.addEvent(t, std::string("S") + char('0' + c), 200.0f);
+        }
+    }
+    return seq;
+}
+
+// Build an InputSequence for 3-symbol temporal order classification (6 classes)
+// Classes map to permutations of [0,1,2]:
+// 0: ABC, 1: ACB, 2: BAC, 3: BCA, 4: CAB, 5: CBA
+static InputSequence build_perm3_sequence(int cls, int total_ticks, float noise, int timing_jitter, std::mt19937 &rng) {
+    static const int perms[6][3] = {
+        {0,1,2}, {0,2,1}, {1,0,2}, {1,2,0}, {2,0,1}, {2,1,0}
+    };
+    int p0 = perms[cls % 6][0];
+    int p1 = perms[cls % 6][1];
+    int p2 = perms[cls % 6][2];
+
+    InputSequence seq;
+    std::uniform_real_distribution<float> noise01(0.0f, 1.0f);
+    std::uniform_int_distribution<int> len_dist(8, 16);     // segment lengths
+    std::uniform_int_distribution<int> gap_dist(4, 12);     // inter-segment gaps
+    std::uniform_int_distribution<int> jit_dist(0, std::max(0, timing_jitter));
+
+    int L0 = std::min(len_dist(rng), std::max(4, total_ticks/8));
+    int L1 = std::min(len_dist(rng), std::max(4, total_ticks/8));
+    int L2 = std::min(len_dist(rng), std::max(4, total_ticks/8));
+    int G0 = gap_dist(rng);
+    int G1 = gap_dist(rng);
+
+    int needed = L0 + L1 + L2 + G0 + G1 + 2; // a bit of slack
+    if (needed > total_ticks) {
+        // Compress proportionally to fit
+        float scale = (float)total_ticks / (float)needed;
+        L0 = std::max(3, (int)(L0 * scale));
+        L1 = std::max(3, (int)(L1 * scale));
+        L2 = std::max(3, (int)(L2 * scale));
+        G0 = std::max(2, (int)(G0 * scale));
+        G1 = std::max(2, (int)(G1 * scale));
+    }
+
+    int t0 = 0 + (timing_jitter > 0 ? jit_dist(rng) : 0);
+    int t1 = t0 + L0 + G0 + (timing_jitter > 0 ? jit_dist(rng) : 0);
+    int t2 = t1 + L1 + G1 + (timing_jitter > 0 ? jit_dist(rng) : 0);
+    // Clamp to fit within total_ticks
+    if (t2 + L2 >= total_ticks) {
+        int over = t2 + L2 - (total_ticks - 1);
+        t2 = std::max(0, t2 - over);
+        if (t2 + L2 >= total_ticks) L2 = std::max(3, total_ticks - 1 - t2);
+        if (t1 + L1 >= t2) t1 = std::max(0, t2 - L1 - 2);
+        if (t0 + L0 >= t1) t0 = std::max(0, t1 - L0 - 2);
+    }
+
+    auto add_segment = [&](int start, int len, int sensor){
+        std::string sid = std::string("S") + char('0' + sensor);
+        int end = std::min(total_ticks, start + len);
+        for (int t = start; t < end; ++t) {
+            seq.addEvent(t, sid, 200.0f);
+        }
+    };
+
+    add_segment(t0, L0, p0);
+    add_segment(t1, L1, p1);
+    add_segment(t2, L2, p2);
+
+    // Add background noise: occasional spurious pulses on non-active sensors
+    if (noise > 0.0f) {
+        for (int t = 0; t < total_ticks; ++t) {
+            for (int s = 0; s < 3; ++s) {
+                if (noise01(rng) < noise * 0.5f) {
+                    seq.addEvent(t, std::string("S") + char('0' + s), 200.0f);
+                }
+            }
         }
     }
     return seq;
@@ -378,6 +497,9 @@ int main(int argc, const char* argv[]) {
             if (args.default_id.empty()) args.default_id = "O0";
         } else if (args.scenario == "3class") {
             args.net_path = std::string("../../examples/3class/") + (args.use_baseline ? "3class_baseline.net" : "3class_network.net");
+        } else if (args.scenario == "perm3") {
+            args.net_path = std::string("../../examples/perm3/") + (args.use_baseline ? "perm3_baseline.net" : "perm3_network.net");
+            if (args.default_id.empty()) args.default_id = "O0";
         } else {
             std::cerr << "Unknown scenario: " << args.scenario << "\n";
             return 1;
@@ -410,6 +532,7 @@ int main(int argc, const char* argv[]) {
     if (args.batch > 0) cfg.batch_size = args.batch;
     if (args.shuffle == 0) cfg.shuffle = false; else if (args.shuffle == 1) cfg.shuffle = true;
     if (!args.reward_mode.empty()) cfg.reward_mode = args.reward_mode;
+    if (!args.update_gating.empty()) cfg.update_gating = args.update_gating;
     if (args.reward_gain > -9000.0f) cfg.reward_gain = args.reward_gain;
     if (args.reward_min > -9000.0f) cfg.reward_min = args.reward_min;
     if (args.reward_max > -9000.0f) cfg.reward_max = args.reward_max;
@@ -432,6 +555,11 @@ int main(int argc, const char* argv[]) {
     if (args.revert_drop > -9000.0f) cfg.revert_drop = args.revert_drop;
     if (args.jitter_std >= 0.0f) cfg.weight_jitter_std = args.jitter_std;
     if (args.timing_jitter >= 0) cfg.timing_jitter = args.timing_jitter;
+    if (args.no_update_if_satisfied == 0) cfg.no_update_if_satisfied = false; else if (args.no_update_if_satisfied == 1) cfg.no_update_if_satisfied = true;
+    if (args.use_advantage_baseline == 0) cfg.use_advantage_baseline = false; else if (args.use_advantage_baseline == 1) cfg.use_advantage_baseline = true;
+    if (args.baseline_beta >= 0.0f) cfg.baseline_beta = args.baseline_beta;
+    if (args.elig_post_use_rate == 0) cfg.elig_post_use_rate = false; else if (args.elig_post_use_rate == 1) cfg.elig_post_use_rate = true;
+    if (args.weight_clip >= 0.0f) cfg.weight_clip = args.weight_clip;
 
     // Load network
     Glia net;
@@ -462,13 +590,36 @@ int main(int argc, const char* argv[]) {
             }
         } else if (args.scenario == "3class") {
             for (int c = 0; c < 3; ++c) {
-                Trainer::EpisodeData ex;
-                ex.seq = build_3class_sequence(c, total_ticks, args.noise, cfg.timing_jitter, rng_local);
-                ex.target_id = std::string("O") + char('0' + c);
-                dataset.push_back(ex);
+                int reps = std::max(1, args.n_per_class);
+                for (int r = 0; r < reps; ++r) {
+                    Trainer::EpisodeData ex;
+                    ex.seq = build_3class_sequence(c, total_ticks, args.noise, cfg.timing_jitter, rng_local);
+                    ex.target_id = std::string("O") + char('0' + c);
+                    dataset.push_back(ex);
+                }
+            }
+        } else if (args.scenario == "perm3") {
+            for (int c = 0; c < 6; ++c) {
+                int reps = std::max(1, args.n_per_class);
+                for (int r = 0; r < reps; ++r) {
+                    Trainer::EpisodeData ex;
+                    ex.seq = build_perm3_sequence(c, total_ticks, args.noise, cfg.timing_jitter, rng_local);
+                    ex.target_id = std::string("O") + char('0' + c);
+                    dataset.push_back(ex);
+                }
             }
         }
         trainer.trainEpoch(dataset, args.epochs, cfg);
+        if (!args.train_metrics_json.empty()) {
+            write_metrics_json(args.train_metrics_json,
+                               trainer.getEpochAccHistory(),
+                               trainer.getEpochMarginHistory(),
+                               args.epochs);
+        }
+        // Save trained net if requested
+        if (!args.save_net.empty()) {
+            net.saveNetworkToFile(args.save_net);
+        }
     }
 
     if (args.scenario == "xor") {
@@ -517,6 +668,32 @@ int main(int argc, const char* argv[]) {
             std::ofstream jf(args.metrics_json);
             if (jf.is_open()) {
                 jf << "{\n  \"scenario\": \"3class\",\n  \"accuracy\": " << (evals.empty() ? 0.0 : (double)correct / evals.size()) << ",\n  \"details\": [\n";
+                for (size_t i = 0; i < evals.size(); ++i) {
+                    jf << "    { \"index\": " << i << ", \"winner\": \"" << evals[i].winner_id
+                       << "\", \"margin\": " << evals[i].margin << " }" << (i+1<evals.size()?",":"") << "\n";
+                }
+                jf << "  ]\n}\n";
+            }
+        }
+        std::cout << "\nSummary: accuracy " << correct << "/" << evals.size()
+                  << " (" << (evals.empty() ? 0.0 : (100.0 * (double)correct / evals.size())) << "%)\n";
+    } else if (args.scenario == "perm3") {
+        std::cout << "=== Evaluating perm3 (3-symbol order, 6 classes) ===\n";
+        int correct = 0;
+        std::vector<EpisodeMetrics> evals;
+        for (int c = 0; c < 6; ++c) {
+            InputSequence seq = build_perm3_sequence(c, total_ticks, args.noise, cfg.timing_jitter, rng_local);
+            EpisodeMetrics m = trainer.evaluate(seq, cfg);
+            evals.push_back(m);
+            std::cout << "\nClass: " << c << " (noise " << args.noise << ")\n";
+            print_metrics(m);
+            std::cout << "Expected: O" << c << "\n";
+            if (m.winner_id == (std::string("O") + char('0' + c))) correct++;
+        }
+        if (!args.metrics_json.empty()) {
+            std::ofstream jf(args.metrics_json);
+            if (jf.is_open()) {
+                jf << "{\n  \"scenario\": \"perm3\",\n  \"accuracy\": " << (evals.empty() ? 0.0 : (double)correct / evals.size()) << ",\n  \"details\": [\n";
                 for (size_t i = 0; i < evals.size(); ++i) {
                     jf << "    { \"index\": " << i << ", \"winner\": \"" << evals[i].winner_id
                        << "\", \"margin\": " << evals[i].margin << " }" << (i+1<evals.size()?",":"") << "\n";

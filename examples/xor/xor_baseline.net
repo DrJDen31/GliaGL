@@ -1,10 +1,7 @@
-# XOR Baseline (Dysfunctional)
-# Purpose: A simple, incorrect network to sanity-check evaluation.
-# This baseline maps both inputs equally to both outputs, with no AND/inhibition.
-# Expected behavior:
-# - 00 → both outputs silent (detector default decides, e.g., O0 if configured)
-# - 01/10 → both outputs excited similarly (argmax unstable/ambiguous)
-# - 11 → both outputs excited (no suppression), not XOR behavior
+# XOR Baseline (Structured, Trainable)
+# Purpose: Same topology as the crafted XOR net (includes AND/coincidence neuron),
+# but with neutral, moderate weights to allow training to shape behavior.
+# This should be learnable to XOR via the trainer’s weight updates.
 
 # Format
 # NEURON <id> <threshold> <leak> <resting>
@@ -14,16 +11,17 @@
 NEURON S0 100.0 1.0 0.0
 NEURON S1 100.0 1.0 0.0
 
-# Outputs only (no A/AND)
-NEURON O1 50.0 1.0 0.0
-NEURON O0 50.0 1.0 0.0
+# Hidden AND/coincidence neuron (N0) and outputs
+NEURON N0 90.0 0.0 0.0   # AND detector (leak=0)
+NEURON O1 50.0 1.0 0.0   # XOR true
+NEURON O0 60.0 1.0 0.0   # XOR false
 
-# Equal feedforward to both outputs (intentionally wrong)
-CONNECTION S0 O1 60.0
-CONNECTION S1 O1 60.0
-CONNECTION S0 O0 60.0
-CONNECTION S1 O0 60.0
+# Neutral feedforward: inputs excite O1 and N0 moderately (trainable)
+CONNECTION S0 O1 40.0
+CONNECTION S1 O1 40.0
+CONNECTION S0 N0 60.0
+CONNECTION S1 N0 60.0
 
-# Mutual inhibition (winner-take-all)
-CONNECTION O0 O1 -10.0
-CONNECTION O1 O0 -10.0
+# N0 projects moderately but not enough to fully flip 11 (pretrain ~3/4)
+CONNECTION N0 O1 -40.0
+CONNECTION N0 O0  40.0
