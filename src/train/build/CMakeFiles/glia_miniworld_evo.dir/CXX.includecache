@@ -1,0 +1,40 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.cpp
+glia.h
+/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.h
+neuron.h
+/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/neuron.h
+vector
+-
+iostream
+-
+fstream
+-
+sstream
+-
+random
+-
+cmath
+-
+
+/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.h
+vector
+-
+map
+-
+string
+-
+
+/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/neuron.h
+map
+-
+string
+-
+

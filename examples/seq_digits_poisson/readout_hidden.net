@@ -1,0 +1,11 @@
+# Multilayer digits network (8x8 inputs -> 128 hidden -> 10 outputs)
+NEWNET S=64 H=128 O=10 WTA=0
+DENSITY S->H 0.6
+DENSITY H->H 0.05
+DENSITY H->O 0.6
+DENSITY S->O 0.2
+INIT he
+EXCIT_RATIO 0.7
+W_SCALE 1.0
+THRESHOLDS S 100 H 45 O 50
+LEAK S 1.0 H 0.90 O 1.0

@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/glia_eval.dir/eval_main.cpp.o CMakeFiles/glia_eval.dir/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.cpp.o CMakeFiles/glia_eval.dir/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/neuron.cpp.o  -o glia_eval 

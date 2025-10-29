@@ -13,8 +13,9 @@
 #include "../arch/neuron.h"
 #include "../arch/output_detection.h"
 #include "../arch/input_sequence.h"
-#include "training_config.h"
-#include "trainer.h"
+#include "hebbian/training_config.h"
+#include "hebbian/trainer.h"
+#include "gradient/rate_gd_trainer.h"
 
 struct Args {
     std::string net_path;
@@ -27,6 +28,7 @@ struct Args {
     std::string default_id;      // optional default when below threshold
     float noise = 0.0f;          // for 3class only
     bool train = false;
+    int hebbian = -1;          // 1 = force Hebbian; default uses gradient
     int epochs = 0;
     float lr = -1.0f;
     float lambda_ = -1.0f;
@@ -36,6 +38,7 @@ struct Args {
     float reward_neg = -0.8f;
     float r_target = -1.0f;
     float rate_alpha = -1.0f;
+    float gd_temperature = -1.0f; // gradient: softmax temperature
     float eta_theta = 0.0f;
     float eta_leak = 0.0f;
     float prune_eps = -1.0f;
@@ -87,8 +90,8 @@ struct Args {
 
 static void print_usage(const char* prog) {
     std::cout << "Usage:\n"
-              << "  " << prog << " [--argfile PATH | --config PATH.json] --net <path> [--warmup U --window W --alpha A --threshold T --default ID] [--train --epochs E [--batch B --shuffle 0|1 --lr L --lambda B --weight_decay D --margin M --reward_mode MODE --update_gating none|winner_only|target_only --reward_gain G --reward_min A --reward_max B --reward_pos RP --reward_neg RN --r_target RT --rate_alpha RA --eta_theta ET --eta_leak EL --prune_eps PE --prune_patience PP --grow_edges G --init_weight IW --usage_boost_gain G --inactive_rate_threshold T --inactive_rate_patience P --prune_inactive_max K --prune_inactive_out 0|1 --prune_inactive_in 0|1 --checkpoints_enable 0|1 --ckpt_l0 N --ckpt_l1 N --ckpt_l2 N --revert_enable 0|1 --revert_metric accuracy|margin --revert_window N --revert_drop F --jitter_std F --timing_jitter N --verbose 0|1 --log_every N --seed S --dataset PATH --metrics_json PATH]]\n"
-              << "  " << prog << " --scenario xor|3class|perm3 [--baseline] [--warmup U --window W --alpha A --threshold T --default ID --noise P --n_per_class N] [--train --epochs E --batch B --shuffle 0|1 [...hyperparams...]]\n"
+              << "  " << prog << " [--argfile PATH | --config PATH.json] --net <path> [--warmup U --window W --alpha A --threshold T --default ID] [--train --epochs E [--batch B --shuffle 0|1 --hebbian 1 --gd_temperature T --lr L --lambda B --weight_decay D --margin M --reward_mode MODE --update_gating none|winner_only|target_only --reward_gain G --reward_min A --reward_max B --reward_pos RP --reward_neg RN --r_target RT --rate_alpha RA --eta_theta ET --eta_leak EL --prune_eps PE --prune_patience PP --grow_edges G --init_weight IW --usage_boost_gain G --inactive_rate_threshold T --inactive_rate_patience P --prune_inactive_max K --prune_inactive_out 0|1 --prune_inactive_in 0|1 --checkpoints_enable 0|1 --ckpt_l0 N --ckpt_l1 N --ckpt_l2 N --revert_enable 0|1 --revert_metric accuracy|margin --revert_window N --revert_drop F --jitter_std F --timing_jitter N --verbose 0|1 --log_every N --seed S --dataset PATH --metrics_json PATH]]\n"
+              << "  " << prog << " --scenario xor|3class|perm3 [--baseline] [--warmup U --window W --alpha A --threshold T --default ID --noise P --n_per_class N --hebbian 1 --gd_temperature T] [--train --epochs E --batch B --shuffle 0|1 [...hyperparams...]]\n"
               << "\nExamples:\n"
               << "  " << prog << " --scenario xor --baseline --default O0\n"
               << "  " << prog << " --net ..\\examples\\3class\\3class_network.net --noise 0.1\n";
@@ -205,6 +208,7 @@ static bool parse_config_json(const std::string &path, Args &a) {
     extract_string_kv(s, "default", a.default_id);
     extract_float_kv(s,  "noise", a.noise);
     extract_bool_kv(s,   "train", a.train);
+    { bool b; if (extract_bool_kv(s, "hebbian", b)) a.hebbian = b ? 1 : 0; }
     extract_int_kv(s,    "epochs", a.epochs);
     extract_float_kv(s,  "lr", a.lr);
     extract_float_kv(s,  "lambda", a.lambda_);
@@ -219,6 +223,7 @@ static bool parse_config_json(const std::string &path, Args &a) {
     extract_float_kv(s,  "reward_neg", a.reward_neg);
     extract_float_kv(s,  "r_target", a.r_target);
     extract_float_kv(s,  "rate_alpha", a.rate_alpha);
+    extract_float_kv(s,  "gd_temperature", a.gd_temperature);
     extract_float_kv(s,  "eta_theta", a.eta_theta);
     extract_float_kv(s,  "eta_leak", a.eta_leak);
     extract_float_kv(s,  "prune_eps", a.prune_eps);
@@ -292,6 +297,7 @@ static bool parse_args(int argc, const char* argv[], Args &a) {
         else if (k == "--default") { if (!next(a.default_id)) return false; }
         else if (k == "--noise") { std::string v; if (!next(v)) return false; a.noise = std::atof(v.c_str()); }
         else if (k == "--train") { a.train = true; }
+        else if (k == "--hebbian") { a.hebbian = 1; }
         else if (k == "--epochs") { std::string v; if (!next(v)) return false; a.epochs = std::atoi(v.c_str()); }
         else if (k == "--lr") { std::string v; if (!next(v)) return false; a.lr = std::atof(v.c_str()); }
         else if (k == "--lambda") { std::string v; if (!next(v)) return false; a.lambda_ = std::atof(v.c_str()); }
@@ -301,6 +307,7 @@ static bool parse_args(int argc, const char* argv[], Args &a) {
         else if (k == "--reward_neg") { std::string v; if (!next(v)) return false; a.reward_neg = std::atof(v.c_str()); }
         else if (k == "--r_target") { std::string v; if (!next(v)) return false; a.r_target = std::atof(v.c_str()); }
         else if (k == "--rate_alpha") { std::string v; if (!next(v)) return false; a.rate_alpha = std::atof(v.c_str()); }
+        else if (k == "--gd_temperature") { std::string v; if (!next(v)) return false; a.gd_temperature = std::atof(v.c_str()); }
         else if (k == "--eta_theta") { std::string v; if (!next(v)) return false; a.eta_theta = std::atof(v.c_str()); }
         else if (k == "--eta_leak") { std::string v; if (!next(v)) return false; a.eta_leak = std::atof(v.c_str()); }
         else if (k == "--prune_eps") { std::string v; if (!next(v)) return false; a.prune_eps = std::atof(v.c_str()); }
@@ -523,6 +530,7 @@ int main(int argc, const char* argv[]) {
     cfg.reward_neg = args.reward_neg;
     if (args.r_target >= 0.0f) cfg.r_target = args.r_target;
     if (args.rate_alpha >= 0.0f) cfg.rate_alpha = args.rate_alpha;
+    if (args.gd_temperature > 0.0f) cfg.grad.temperature = args.gd_temperature;
     cfg.eta_theta = args.eta_theta;
     cfg.eta_leak = args.eta_leak;
     if (args.prune_eps >= 0.0f) cfg.prune_epsilon = args.prune_eps;
@@ -565,9 +573,12 @@ int main(int argc, const char* argv[]) {
     Glia net;
     net.configureNetworkFromFile(args.net_path);
 
-    // Prepare trainer
-    Trainer trainer(net);
-    trainer.reseed(cfg.seed);
+    // Prepare trainers (default to gradient unless --hebbian is provided)
+    Trainer hebb_trainer(net);
+    RateGDTrainer gd_trainer(net);
+    hebb_trainer.reseed(cfg.seed);
+    gd_trainer.reseed(cfg.seed);
+    bool use_hebbian = (args.hebbian == 1);
 
     const int total_ticks = cfg.warmup_ticks + cfg.decision_window;
     std::mt19937 rng_local(cfg.seed);
@@ -609,12 +620,15 @@ int main(int argc, const char* argv[]) {
                 }
             }
         }
-        trainer.trainEpoch(dataset, args.epochs, cfg);
+        if (use_hebbian) {
+            hebb_trainer.trainEpoch(dataset, args.epochs, cfg);
+        } else {
+            gd_trainer.trainEpoch(dataset, args.epochs, cfg);
+        }
         if (!args.train_metrics_json.empty()) {
-            write_metrics_json(args.train_metrics_json,
-                               trainer.getEpochAccHistory(),
-                               trainer.getEpochMarginHistory(),
-                               args.epochs);
+            const auto &acc = use_hebbian ? hebb_trainer.getEpochAccHistory() : gd_trainer.getEpochAccHistory();
+            const auto &margin = use_hebbian ? hebb_trainer.getEpochMarginHistory() : gd_trainer.getEpochMarginHistory();
+            write_metrics_json(args.train_metrics_json, acc, margin, args.epochs);
         }
         // Save trained net if requested
         if (!args.save_net.empty()) {
@@ -629,7 +643,7 @@ int main(int argc, const char* argv[]) {
         std::vector<EpisodeMetrics> evals;
         for (auto &p : tests) {
             InputSequence seq = build_xor_sequence(p.first, p.second, total_ticks, cfg.timing_jitter, rng_local);
-            EpisodeMetrics m = trainer.evaluate(seq, cfg);
+            EpisodeMetrics m = (use_hebbian ? hebb_trainer.evaluate(seq, cfg) : gd_trainer.evaluate(seq, cfg));
             evals.push_back(m);
             std::cout << "\nInput: " << p.first << p.second << "\n";
             print_metrics(m);
@@ -657,7 +671,7 @@ int main(int argc, const char* argv[]) {
         std::vector<EpisodeMetrics> evals;
         for (int c = 0; c < 3; ++c) {
             InputSequence seq = build_3class_sequence(c, total_ticks, args.noise, cfg.timing_jitter, rng_local);
-            EpisodeMetrics m = trainer.evaluate(seq, cfg);
+            EpisodeMetrics m = (use_hebbian ? hebb_trainer.evaluate(seq, cfg) : gd_trainer.evaluate(seq, cfg));
             evals.push_back(m);
             std::cout << "\nClass: " << c << " (noise " << args.noise << ")\n";
             print_metrics(m);
@@ -683,7 +697,7 @@ int main(int argc, const char* argv[]) {
         std::vector<EpisodeMetrics> evals;
         for (int c = 0; c < 6; ++c) {
             InputSequence seq = build_perm3_sequence(c, total_ticks, args.noise, cfg.timing_jitter, rng_local);
-            EpisodeMetrics m = trainer.evaluate(seq, cfg);
+            EpisodeMetrics m = (use_hebbian ? hebb_trainer.evaluate(seq, cfg) : gd_trainer.evaluate(seq, cfg));
             evals.push_back(m);
             std::cout << "\nClass: " << c << " (noise " << args.noise << ")\n";
             print_metrics(m);
@@ -707,7 +721,7 @@ int main(int argc, const char* argv[]) {
         // No scenario: just evaluate whatever net was provided with an empty/no-input sequence
         std::cout << "=== Evaluating Custom Net ===\n";
         InputSequence seq; // no events
-        EpisodeMetrics m = trainer.evaluate(seq, cfg);
+        EpisodeMetrics m = (use_hebbian ? hebb_trainer.evaluate(seq, cfg) : gd_trainer.evaluate(seq, cfg));
         print_metrics(m);
     }
 

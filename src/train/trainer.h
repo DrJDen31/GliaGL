@@ -1,4 +1,7 @@
 #pragma once
+#include "hebbian/trainer.h"
+#if 0
+#pragma once
 #include <string>
 #include <vector>
 #include <map>
@@ -702,3 +705,5 @@ private:
         }
     }
 };
+
+#endif

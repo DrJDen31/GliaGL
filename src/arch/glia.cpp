@@ -62,7 +62,7 @@ void Glia::step()
 	}
 }
 
-void Glia::configureNetworkFromFile(std::string filepath)
+void Glia::configureNetworkFromFile(std::string filepath, bool verbose)
 {
 	std::ifstream file(filepath);
 	if (!file.is_open())
@@ -184,8 +184,28 @@ void Glia::configureNetworkFromFile(std::string filepath)
             e.from->setTransmitter(e.to->getId(), w);
         }
 
-        std::cout << "NEWNET built: S=" << nn.S << " H=" << nn.H << " O=" << nn.O << (nn.pool?" + pool":"") << std::endl;
-        std::cout << "Network configuration loaded from " << filepath << std::endl;
+        // Sanitize: remove any accidental null-pointer connections before use
+        int null_edge_count = 0;
+        for (auto *src : sensory_neurons) {
+            std::vector<std::string> bad;
+            const auto &conns = src->getConnections();
+            for (const auto &kv : conns) { if (kv.second.second == nullptr) { bad.push_back(kv.first); null_edge_count++; } }
+            for (const auto &to_id : bad) src->removeConnection(to_id);
+        }
+        for (auto *src : neurons) {
+            std::vector<std::string> bad;
+            const auto &conns = src->getConnections();
+            for (const auto &kv : conns) { if (kv.second.second == nullptr) { bad.push_back(kv.first); null_edge_count++; } }
+            for (const auto &to_id : bad) src->removeConnection(to_id);
+        }
+
+        if (verbose) {
+            if (null_edge_count > 0) {
+                std::cout << "Sanitized null connections: " << null_edge_count << std::endl;
+            }
+            std::cout << "NEWNET built: S=" << nn.S << " H=" << nn.H << " O=" << nn.O << (nn.pool?" + pool":"") << std::endl;
+            std::cout << "Network configuration loaded from " << filepath << std::endl;
+        }
         return;
     }
 
@@ -206,16 +226,19 @@ void Glia::configureNetworkFromFile(std::string filepath)
                 Neuron *new_neuron = new Neuron(id, total_neurons + 1, resting, leak, 4, threshold, true);
                 if (!id.empty() && id[0] == 'S') { sensory_neurons.push_back(new_neuron); sensory_mapping[id] = new_neuron; }
                 else { neurons.push_back(new_neuron); neuron_mapping[id] = new_neuron; }
-                std::cout << "Created neuron " << id << ": threshold=" << threshold
-                          << ", leak=" << leak << ", resting=" << resting << std::endl;
+                if (verbose) {
+                    std::cout << "Created neuron " << id << ": threshold=" << threshold
+                              << ", leak=" << leak << ", resting=" << resting << std::endl;
+                }
             }
         } else if (cmd == "CONNECTION") {
             std::string from_id, to_id; float weight; iss >> from_id >> to_id >> weight;
             addConnection(from_id, to_id, weight);
         }
     }
-
-    std::cout << "Network configuration loaded from " << filepath << std::endl;
+    if (verbose) {
+        std::cout << "Network configuration loaded from " << filepath << std::endl;
+    }
 }
 
 void Glia::saveNetworkToFile(std::string filepath)
@@ -295,20 +318,35 @@ void Glia::printNetwork()
 
 void Glia::addConnection(std::string from_id, std::string to_id, float weight)
 {
-	// get neuron objects
-	Neuron *from;
-	Neuron *to;
+    // get neuron objects
+    Neuron *from = nullptr;
+    Neuron *to = nullptr;
 
-    // gettin "from" object based on prefix: S* is sensory, anything else is regular neuron
-    if (!from_id.empty() && from_id[0] == 'S') { from = sensory_mapping[from_id]; }
-    else { from = neuron_mapping[from_id]; }
+    // get "from" object based on prefix: S* is sensory, anything else is regular neuron
+    if (!from_id.empty() && from_id[0] == 'S') {
+        auto it = sensory_mapping.find(from_id);
+        if (it != sensory_mapping.end()) from = it->second;
+    } else {
+        auto it = neuron_mapping.find(from_id);
+        if (it != neuron_mapping.end()) from = it->second;
+    }
 
-    // getting "to" object based on prefix
-    if (!to_id.empty() && to_id[0] == 'S') { to = sensory_mapping[to_id]; }
-    else { to = neuron_mapping[to_id]; }
+    // get "to" object based on prefix
+    if (!to_id.empty() && to_id[0] == 'S') {
+        auto it = sensory_mapping.find(to_id);
+        if (it != sensory_mapping.end()) to = it->second;
+    } else {
+        auto it = neuron_mapping.find(to_id);
+        if (it != neuron_mapping.end()) to = it->second;
+    }
 
-	// add connection to neuron object
-	from->addConnection(weight, *to);
+    if (!from || !to) {
+        std::cerr << "Warning: addConnection skipped for missing neuron(s): " << from_id << " -> " << to_id << std::endl;
+        return;
+    }
+
+    // add connection to neuron object
+    from->addConnection(weight, *to);
 }
 
 // apply "stimuli" to sensory neurons

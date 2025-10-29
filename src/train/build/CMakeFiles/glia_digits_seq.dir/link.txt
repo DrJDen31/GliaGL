@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/glia_digits_seq.dir/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/examples/seq_digits_poisson/main.cpp.o CMakeFiles/glia_digits_seq.dir/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.cpp.o CMakeFiles/glia_digits_seq.dir/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/neuron.cpp.o  -o glia_digits_seq 

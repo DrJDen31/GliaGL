@@ -21,8 +21,9 @@ public:
 	// tick/step function
 	void step();
 
-	// file handling to load/save networks
-	void configureNetworkFromFile(std::string filepath);
+    // file handling to load/save networks
+    // verbose: if true (default), prints creation/loading info
+    void configureNetworkFromFile(std::string filepath, bool verbose = true);
 	void saveNetworkToFile(std::string filepath);
 
 	// debug printing

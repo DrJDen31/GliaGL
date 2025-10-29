@@ -4,7 +4,7 @@ This document summarizes the training pipeline implemented in `src/train/` and t
 
 ## Components
 
-- `training_config.h` — Hyperparameters for:
+- `hebbian/training_config.h` — Hyperparameters for:
   - Output detection (EMA alpha/threshold)
   - Episode timing (warmup U, decision window W)
   - Learning (lr, eligibility lambda, weight decay)
@@ -12,7 +12,7 @@ This document summarizes the training pipeline implemented in `src/train/` and t
   - Intrinsic plasticity (target rate, EMA alpha, threshold/leak steps)
   - Sparsity/growth (prune epsilon/patience, edge growth count, init weight)
   - Batching (batch size, shuffle)
-- `trainer.h` — Training API:
+- `hebbian/trainer.h` — Training API:
   - `Trainer::evaluate()` — Run a single episode and return rates, margin, winner
   - `Trainer::trainEpisode()` — Per-episode learning (reward-modulated Hebbian with eligibility traces)
   - `Trainer::computeEpisodeDelta()` — Compute per-edge deltas without mutating weights
@@ -20,6 +20,9 @@ This document summarizes the training pipeline implemented in `src/train/` and t
   - `Trainer::trainBatch()` — Accumulate across a batch and apply once
   - `Trainer::trainEpoch()` — Iterate batches for N epochs with optional shuffle
 - `eval_main.cpp` — CLI runner with training and evaluation modes
+- `mini_world_main.cpp` — Dataset runner for Mini-World (.seq + labels)
+- `gradient/PLAN.md` — Implementation roadmap for rate-based gradient descent
+- `gradient/README.md` — Theory of surrogate gradient training on spiking RNNs
 
 ## Data Model
 

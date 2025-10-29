@@ -53,7 +53,10 @@ PARAMS:
 */
 void Neuron::setTransmitter(std::string id, float new_transmitter)
 {
-    this->connections[id].first = new_transmitter;
+    auto it = this->connections.find(id);
+    if (it != this->connections.end()) {
+        it->second.first = new_transmitter;
+    }
 }
 
 /*
@@ -219,7 +222,9 @@ void Neuron::fire()
     // send transmissions
     for (auto itr = connections.begin(); itr != connections.end(); ++itr)
     {
-        itr->second.second->receive(itr->second.first);
+        Neuron* dst = itr->second.second;
+        if (!dst) continue;
+        dst->receive(itr->second.first);
     }
     // this->refractory = this->refractory_period;
 }

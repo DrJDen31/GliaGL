@@ -22,8 +22,9 @@
 #include "../arch/glia.h"
 #include "../arch/neuron.h"
 #include "../arch/input_sequence.h"
-#include "trainer.h"
-#include "training_config.h"
+#include "hebbian/trainer.h"
+#include "hebbian/training_config.h"
+#include "gradient/rate_gd_trainer.h"
 
 struct MWConfig {
     std::string net_path;
@@ -66,6 +67,10 @@ struct MWConfig {
     // Optional outputs
     std::string save_net;            // path to save trained net
     std::string train_metrics_json;  // per-epoch metrics JSON
+
+    // Trainer selection
+    bool hebbian = false;            // default to gradient trainer
+    float gd_temperature = 1.0f;     // softmax temperature for gradient mode
 };
 
 // --- tiny helpers to read config JSON (regex-based, flat keys + nested detector)
@@ -141,6 +146,9 @@ static bool parse_config_json(const std::string &path, MWConfig &cfg) {
 
     extract_string_kv(s, "save_net", cfg.save_net);
     extract_string_kv(s, "train_metrics_json", cfg.train_metrics_json);
+
+    { bool b; if (extract_bool_kv(s, "hebbian", b)) cfg.hebbian = b; }
+    extract_float_kv(s,  "gd_temperature", cfg.gd_temperature);
 
     // Nested detector object support
     size_t pos = s.find("\"detector\"");
@@ -240,7 +248,9 @@ int main(int argc, char** argv) {
     if (samples.empty()) { std::cerr << "No dataset samples found under: " << args.data_root << "\n"; return 5; }
 
     // Shuffle by clip id order then shuffle with seed
-    std::sort(samples.begin(), samples.end(), [](const auto &a, const auto &b){ return a.first < b.first; });
+    std::sort(samples.begin(), samples.end(),
+              [](const std::pair<int, Trainer::EpisodeData>& a,
+                 const std::pair<int, Trainer::EpisodeData>& b){ return a.first < b.first; });
     std::mt19937 rng(args.seed);
     std::shuffle(samples.begin(), samples.end(), rng);
 
@@ -289,14 +299,22 @@ int main(int argc, char** argv) {
     cfg.verbose = true;
     cfg.log_every = 1;
     cfg.seed = args.seed;
+    if (args.gd_temperature > 0.0f) cfg.grad.temperature = args.gd_temperature;
+    if (args.hebbian) {/* keep default grad config but training will use hebbian */}
 
-    Trainer trainer(net);
-    trainer.reseed(args.seed);
+    Trainer hebb_trainer(net);
+    RateGDTrainer gd_trainer(net);
+    hebb_trainer.reseed(args.seed);
+    gd_trainer.reseed(args.seed);
 
     if (args.train && args.epochs > 0) {
-        trainer.trainEpoch(train_set, args.epochs, cfg);
-        auto acc = trainer.getEpochAccHistory();
-        auto margin = trainer.getEpochMarginHistory();
+        if (args.hebbian) {
+            hebb_trainer.trainEpoch(train_set, args.epochs, cfg);
+        } else {
+            gd_trainer.trainEpoch(train_set, args.epochs, cfg);
+        }
+        auto acc = args.hebbian ? hebb_trainer.getEpochAccHistory() : gd_trainer.getEpochAccHistory();
+        auto margin = args.hebbian ? hebb_trainer.getEpochMarginHistory() : gd_trainer.getEpochMarginHistory();
         if (!args.train_metrics_json.empty()) write_metrics_json(args.train_metrics_json, acc, margin, args.epochs);
     }
 
@@ -311,7 +329,8 @@ int main(int argc, char** argv) {
         int K = args.max_class + 1;
         std::vector<std::vector<int>> cm(K, std::vector<int>(K, 0));
         for (const auto &ex : val_set) {
-            EpisodeMetrics m = trainer.evaluate(const_cast<InputSequence&>(ex.seq), cfg);
+            EpisodeMetrics m = (args.hebbian ? hebb_trainer.evaluate(const_cast<InputSequence&>(ex.seq), cfg)
+                                             : gd_trainer.evaluate(const_cast<InputSequence&>(ex.seq), cfg));
             int yt = parse_output_index(ex.target_id);
             int yp = parse_output_index(m.winner_id);
             if (yt >= 0 && yt <= args.max_class && yp >= 0 && yp <= args.max_class) {
