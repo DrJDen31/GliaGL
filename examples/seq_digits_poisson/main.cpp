@@ -78,7 +78,8 @@ static bool parse_args(int argc, char** argv, Args &a) {
 }
 
 static inline std::string join_path(const std::string &a, const std::string &b) {
-    if (a.empty()) return b; if (b.empty()) return a;
+    if (a.empty()) return b;
+    if (b.empty()) return a;
     char sep = '/';
     if (a.back() == '/' || a.back() == '\\') return a + b;
     return a + sep + b;
@@ -138,7 +139,8 @@ static bool read_labels_list(const std::string &dir, std::vector<std::pair<std::
 static void print_progress_bar(size_t done, size_t total, double acc, double loss) {
     const int width = 30;
     double frac = (total==0) ? 1.0 : static_cast<double>(done)/static_cast<double>(total);
-    if (frac < 0.0) frac = 0.0; if (frac > 1.0) frac = 1.0;
+    if (frac < 0.0) frac = 0.0;
+    if (frac > 1.0) frac = 1.0;
     int filled = static_cast<int>(frac * width + 0.5);
     std::ostringstream bar;
     bar << "[";

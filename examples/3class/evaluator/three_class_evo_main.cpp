@@ -142,6 +142,7 @@ int main(int argc, char** argv) {
     EvolutionEngine::Callbacks cbs;
     if (!out_dir.empty()) {
         cbs.on_generation = [&](int gen, const EvolutionEngine::NetSnapshot &best, const EvoMetrics &m){
+            (void)m;
             Glia net; net.configureNetworkFromFile(net_path, /*verbose=*/false);
             // restore best
             std::unordered_map<std::string, std::unordered_map<std::string,float>> edge_set;

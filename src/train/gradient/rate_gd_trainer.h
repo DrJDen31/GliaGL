@@ -124,7 +124,7 @@ private:
             injectFromSequence(seq); glia.step();
             std::unordered_map<std::string, bool> fired;
             glia.forEachNeuron([&](Neuron &n){ bool f = n.didFire(); std::string nid = n.getId(); fired.emplace(nid, f); float r = 0.0f; auto itnr = neuron_rate.find(nid); if (itnr != neuron_rate.end()) r = itnr->second; float newr = (1.0f - cfg.rate_alpha) * r + cfg.rate_alpha * (f ? 1.0f : 0.0f); if (itnr != neuron_rate.end()) itnr->second = newr; else neuron_rate.emplace(nid, newr); });
-            glia.forEachNeuron([&](Neuron &from){ std::string from_id = from.getId(); const auto &conns = from.getConnections(); for (const auto &kv : conns) { std::string to_id = kv.first; std::string k = edge_key(from_id, to_id); float e_prev = 0.0f; auto itE = elig.find(k); if (itE != elig.end()) e_prev = itE->second; float pre = 0.0f; auto itPre = neuron_rate.find(from_id); if (itPre != neuron_rate.end()) pre = itPre->second; float post = 0.0f; if (cfg.elig_post_use_rate) { auto itPost = neuron_rate.find(to_id); if (itPost != neuron_rate.end()) post = itPost->second; } else { auto itF = fired.find(to_id); bool fpost = (itF != fired.end()) ? itF->second : false; post = fpost ? 1.0f : 0.0f; } float e_new = cfg.elig_lambda * e_prev + pre * post; if (itE != elig.end()) itE->second = e_new; else elig.emplace(std::move(k), e_new); }});
+            glia.forEachNeuron([&](Neuron &from){ std::string from_id = from.getId(); const auto &conns = from.getConnections(); for (const auto &kv : conns) { std::string to_id = kv.first; std::string k = edge_key(from_id, to_id); float e_prev = 0.0f; auto itE = elig.find(k); if (itE != elig.end()) e_prev = itE->second; float pre = 0.0f; auto itPre = neuron_rate.find(from_id); if (itPre != neuron_rate.end()) pre = itPre->second; float e_new = cfg.elig_lambda * e_prev + pre; if (itE != elig.end()) itE->second = e_new; else elig.emplace(std::move(k), e_new); }});
             updateDetector(detector, output_ids); seq.advance();
         }
         EpisodeMetrics m;
@@ -157,7 +157,7 @@ private:
             glia.forEachNeuron([&](Neuron &from){ std::string from_id = from.getId(); const auto &conns = from.getConnections(); for (const auto &kv : conns) { std::string to_id = kv.first; float w = kv.second.first; auto it_out = outgoing.find(from_id); if (it_out == outgoing.end()) it_out = outgoing.emplace(from_id, std::vector<std::pair<std::string,float>>{}).first; it_out->second.emplace_back(to_id, w); auto it_in = inbound.find(to_id); if (it_in == inbound.end()) it_in = inbound.emplace(to_id, std::vector<std::string>{}).first; it_in->second.emplace_back(from_id); }});
 
             std::unordered_map<std::string, float> phi_prime;
-            glia.forEachNeuron([&](Neuron &n){ std::string nid = n.getId(); float rloc = 0.0f; auto itn = neuron_rate.find(nid); if (itn != neuron_rate.end()) rloc = itn->second; if (rloc < 0.0f) rloc = 0.0f; if (rloc > 1.0f) rloc = 1.0f; phi_prime.emplace(nid, rloc * (1.0f - rloc)); });
+            glia.forEachNeuron([&](Neuron &n){ std::string nid = n.getId(); float rloc = 0.0f; auto itn = neuron_rate.find(nid); if (itn != neuron_rate.end()) rloc = itn->second; if (rloc < 0.0f) rloc = 0.0f; if (rloc > 1.0f) rloc = 1.0f; float eps = 0.05f; if (rloc < eps) rloc = eps; if (rloc > 1.0f - eps) rloc = 1.0f - eps; phi_prime.emplace(nid, rloc * (1.0f - rloc)); });
 
             std::map<std::string, int> dist;
             std::vector<std::string> q; q.reserve(outgoing.size()); size_t qi = 0;
@@ -193,7 +193,7 @@ private:
                 auto itgj = g_rate.find(j); if (itgj != g_rate.end()) itgj->second += acc; else g_rate.emplace(j, acc);
             }
 
-            glia.forEachNeuron([&](Neuron &from){ const auto &conns = from.getConnections(); for (const auto &kv : conns) { const std::string &to_id = kv.first; const std::string k = edge_key(from.getId(), to_id); float e = 0.0f; auto itE = elig.find(k); if (itE != elig.end()) e = itE->second; auto itg = g_rate.find(to_id); if (itg != g_rate.end()) { float delta = itg->second * e; auto itgr = grad.find(k); if (itgr != grad.end()) itgr->second += delta; else grad.emplace(k, delta); } }});
+            glia.forEachNeuron([&](Neuron &from){ const auto &conns = from.getConnections(); for (const auto &kv : conns) { const std::string &to_id = kv.first; const std::string k = edge_key(from.getId(), to_id); float e = 0.0f; auto itE = elig.find(k); if (itE != elig.end()) e = itE->second; auto itg = g_rate.find(to_id); if (itg != g_rate.end()) { float phip = 0.0f; auto itpp = phi_prime.find(to_id); if (itpp != phi_prime.end()) phip = itpp->second; float delta = itg->second * phip * e; auto itgr = grad.find(k); if (itgr != grad.end()) itgr->second += delta; else grad.emplace(k, delta); } }});
         }
         return grad;
     }

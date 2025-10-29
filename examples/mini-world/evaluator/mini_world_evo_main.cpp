@@ -212,6 +212,7 @@ int main(int argc, char** argv) {
     EvolutionEngine::Callbacks cbs;
     if (!out_dir.empty()) {
         cbs.on_generation = [&](int gen, const EvolutionEngine::NetSnapshot &best, const EvoMetrics &m){
+            (void)m;
             Glia net; net.configureNetworkFromFile(net_path, /*verbose=*/false);
             // Manual restore (duplicated from engine)
             // Build edge set
