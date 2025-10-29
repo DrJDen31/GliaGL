@@ -1,7 +1,0 @@
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/edit_cache.dir
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/glia_miniworld_evo.dir
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/glia_3class_evo.dir
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/glia_digits_seq.dir
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/glia_miniworld.dir
-/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/train/build/CMakeFiles/glia_eval.dir

@@ -1,0 +1,16 @@
+# C_cross_modal_binding_config.yaml
+seed: 0
+plasticity:
+  eta_index: 0.0002
+  eta_cortex: 0.00002
+  tau_e_ms: 400
+  gate_window_ms: 120
+gates:
+  token_bucket_capacity: 3
+  token_bucket_refill_s: 10
+trials:
+  paired_presentations: 30
+  mask_reconstruct: true
+metrics:
+  cross_cue_accuracy: true
+  assembly_jaccard: true

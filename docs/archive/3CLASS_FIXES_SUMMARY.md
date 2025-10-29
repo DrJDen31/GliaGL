@@ -77,7 +77,7 @@ Multiple Inputs (S0 + S1):
 
 ## Updated Network Configuration
 
-**File**: `src/testing/3class/3class_network.net`
+**File**: `examples/3class/3class_network.net`
 
 ```
 # Network structure:
@@ -128,7 +128,7 @@ CONNECTION N0 O2 -55.0
 - **`OpenGLCanvas.h/cpp`**: Dynamic sensory input map (already present)
 - **`meshdata.cpp`**: Input injection uses map (already present)
 
-### Test Code (`src/testing/3class/`)
+### Test Code (`examples/3class/`)
 - **`3class_network.net`**: Updated naming and parameters
 - **`3class_test.cpp`**: Changed to use O0, O1, O2
 
@@ -138,7 +138,7 @@ CONNECTION N0 O2 -55.0
 
 ### 1. Recompile Test Harness
 ```bash
-cd src/testing/3class
+cd examples/3class
 make clean && make
 ./3class_test
 ```
@@ -157,7 +157,7 @@ cmake --build . --clean-first
 
 ### 3. Run Visualizer
 ```cmd
-debug\vis.exe --network ../src/testing/3class/3class_network.net --size 1500 1500
+debug\vis.exe --network ../examples/3class/3class_network.net --size 1500 1500
 ```
 
 ### 4. Visual Verification

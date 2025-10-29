@@ -1,1 +1,0 @@
-/usr/bin/c++  -g   CMakeFiles/glia_miniworld.dir/mini_world_main.cpp.o CMakeFiles/glia_miniworld.dir/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/glia.cpp.o CMakeFiles/glia_miniworld.dir/mnt/c/Users/jaden/OneDrive/Documents/AI/GliaGL/src/arch/neuron.cpp.o  -o glia_miniworld 

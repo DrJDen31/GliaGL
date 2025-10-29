@@ -1,1 +1,61 @@
-/build
+/build/
+
+# Local build directories
+src/train/build/
+src/vis/build/
+
+# CMake artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+
+# Visual Studio/MSVC
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+x64/
+Debug/
+Release/
+*.pdb
+*.lib
+*.dll
+*.exp
+
+# Compiled binaries/objects
+*.exe
+*.o
+*.obj
+*.out
+*.a
+*.so
+*.dylib
+*.dSYM/
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Examples: generated outputs and build caches
+examples/**/analysis/
+examples/**/logs/
+examples/**/build/
+examples/**/CMakeFiles/
+examples/**/CMakeCache.txt
+examples/**/Debug/
+examples/**/Release/
+examples/**/x64/
+examples/**/vis.dir/
+examples/**/3class_test
+examples/**/xor_test
+examples/**/generate_tests
+
+# Editor/IDE
+.vscode/
+
+# Project-specific run artifacts
+/digits_trained.net
+/digits_train_metrics.json

@@ -1,19 +1,12 @@
 # GliaGL Build Instructions
 
-## Network Visualization Build
+Note: Prefer the training CLI in `src/train/` (WSL/Linux recommended). The OpenGL visualizer is frozen and may be out-of-date; keep for reference.
 
-### Prerequisites
-
-**Required Libraries:**
-- OpenGL 3.3+ (or Metal on macOS)
-- GLFW 3.x
-- GLEW (Linux/Windows) or built-in OpenGL loader (macOS)
-- GLM (OpenGL Mathematics)
-- C++11 compatible compiler
+## Training CLI Build (WSL/Linux)
 
 ```bash
 cd src/train
-mkdir build && cd build
+mkdir -p build && cd build
 cmake ..
 cmake --build . --config Release
 ```
@@ -33,7 +26,7 @@ glia_eval[.exe] --scenario xor --baseline --default O0
 glia_eval[.exe] --scenario 3class --noise 0.10
 
 # Custom net
-glia_eval[.exe] --net ..\src\testing\xor\xor_network.net --default O0
+glia_eval[.exe] --net ..\examples\xor\xor_network.net --default O0
 ```
 
 Options:
@@ -41,6 +34,17 @@ Options:
 - `--alpha A` sets EMA smoothing
 - `--threshold T` sets activity threshold
 - `--default ID` sets default output when below threshold (e.g., `O0`)
+
+## Visualization Build (reference)
+
+**Required Libraries:**
+- OpenGL 3.3+ (or Metal on macOS)
+- GLFW 3.x
+- GLEW (Linux/Windows) or built-in OpenGL loader (macOS)
+- GLM (OpenGL Mathematics)
+- C++11 compatible compiler
+
+```
 ├── CMakeLists.txt       # Build configuration
 ├── Makefile.simple      # Minimal test build
 └── Makefile.test        # Full test build
@@ -79,7 +83,7 @@ cd src/vis && \
   mkdir build && cd build && \
   cmake .. && \
   make && \
-  ./vis --network ../../../testing/xor/xor_network.net
+  ./vis --network ../../../examples/xor/xor_network.net
 ```
 
 ### Simple Test (No OpenGL)
@@ -113,7 +117,7 @@ make
 
 1. **Run XOR visualization:**
    ```bash
-   ./vis --network ../../../testing/xor/xor_network.net
+   ./vis --network ../../../examples/xor/xor_network.net
    ```
 
 2. **Test keyboard controls:**

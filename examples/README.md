@@ -1,9 +1,9 @@
-# Testing Directory
+# Examples Directory
 
 
 ## Structure
 
-testing/
+examples/
 ├── README.md                 
 │
 └── xor/                       # XOR example (self-contained)
@@ -70,9 +70,9 @@ float margin = detector.getMargin({"O1", "O0"});
 
 To add a new toy example:
 
-1. **Create subdirectory** under `testing/`
+1. **Create subdirectory** under `examples/`
    ```bash
-   mkdir testing/my_example
+   mkdir examples/my_example
    ```
 
 2. **Create test file** (e.g., `my_example_test.cpp`)
@@ -109,10 +109,10 @@ To add a new toy example:
 
 ## Design Philosophy
 
-### Why separate testing/ from arch/?
+### Why separate examples/ from arch/?
 
 - **arch/**: Core simulation engine (Glia, Neuron) - reusable, general-purpose
-- **testing/**: Specific test scenarios and configurations - experimental, example-driven
+- **examples/**: Specific test scenarios and configurations - experimental, example-driven
 
 This separation allows:
 - Multiple test scenarios to share the same core code

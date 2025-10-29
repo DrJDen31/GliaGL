@@ -1,0 +1,9 @@
+# F_global_workspace_config.yaml
+seed: 0
+gw:
+  ignition_threshold: 0.8
+  competition_strength: 1.0
+  attention_bias: 0.1
+metrics:
+  ignition_curve: true
+  report_latency: true

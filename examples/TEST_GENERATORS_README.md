@@ -13,7 +13,7 @@ This ensures:
 ## Directory Structure
 
 ```
-src/testing/
+examples/
   3class/                      # 3-class classification network
     3class_network.net
     3class_test.cpp            # Standalone test harness
@@ -44,7 +44,7 @@ src/testing/
 ### 1. Copy Template
 
 ```bash
-cd src/testing/your_network
+cd examples/your_network
 cp ../3class/generate_tests.cpp .
 cp ../3class/Makefile_gentests .
 ```
@@ -115,10 +115,10 @@ make -f Makefile_gentests
 
 ```cmd
 cd ../../../build
-debug\vis.exe --network ../src/testing/your_network/your_network.net ^
-              --tests ../src/testing/your_network/test_scenario1.seq ^
-                      ../src/testing/your_network/test_scenario2.seq ^
-                      ../src/testing/your_network/test_scenario3.seq
+debug\vis.exe --network ../examples/your_network/your_network.net ^
+              --tests ../examples/your_network/test_scenario1.seq ^
+                      ../examples/your_network/test_scenario2.seq ^
+                      ../examples/your_network/test_scenario3.seq
 ```
 
 ## Example Generators

@@ -29,7 +29,7 @@ debug\vis.exe --cloth ../src/vis/cloth_flag.txt --size 1500 1500
 
 #### NEW: Neural Network Visualization
 ```cmd
-debug\vis.exe --network ../../src/testing/xor/xor_network.net --size 1500 1500
+debug\vis.exe --network ../../examples/xor/xor_network.net --size 1500 1500
 ```
 
 ### Complete Workflow Example
@@ -47,7 +47,7 @@ REM Build
 cmake --build .
 
 REM# Run XOR network visualization
-debug\vis.exe --network ../../src/testing/xor/xor_network.net --size 1500 1500
+debug\vis.exe --network ../../examples/xor/xor_network.net --size 1500 1500
 
 ### Essential
 - `A` - Start animation
@@ -118,7 +118,7 @@ cmake -G"Visual Studio 17" -A x64 -DCMAKE_TOOLCHAIN_FILE=[path-to-vcpkg]/scripts
 Make sure the path is relative to the build directory:
 ```cmd
 REM From GliaGL/build/
-debug\vis.exe --network ../testing/xor/xor_network.net
+debug\vis.exe --network ../examples/xor/xor_network.net
 ```
 
 ### Runtime Issues
@@ -192,9 +192,9 @@ GliaGL/
 │       ├── OpenGL.*shader   → ../src/vis/OpenGL.*shader (auto-found)
 │       └── [other files]
 │
-└── testing/
+└── examples/
     └── xor/
-        └── xor_network.net  → ../testing/xor/xor_network.net
+        └── xor_network.net  → ../examples/xor/xor_network.net
 ```
 
 ## Quick Commands Cheatsheet

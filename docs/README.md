@@ -35,9 +35,9 @@
 
 - **Testing**
   - Index: `docs/testing/README.md`
-  - `src/testing/` – Example nets and harnesses
-  - XOR: `src/testing/xor/` (crafted + baseline)
-  - 3-class: `src/testing/3class/` (crafted + baseline)
+  - `examples/` – Example nets and harnesses
+  - XOR: `examples/xor/` (crafted + baseline)
+  - 3-class: `examples/3class/` (crafted + baseline)
 
 - **Training/Evaluation**
   - CLI runner: `src/train/eval_main.cpp`
@@ -78,5 +78,5 @@ glia_eval[.exe] --scenario xor --baseline --default O0
 glia_eval[.exe] --scenario 3class --noise 0.10
 
 # Evaluate custom .net
-glia_eval[.exe] --net ..\src\testing\xor\xor_network.net --default O0
+glia_eval[.exe] --net ..\examples\xor\xor_network.net --default O0
 ```

@@ -1,0 +1,15 @@
+# A_stable_sparse_encoders_config.yaml
+seed: 0
+encoder:
+  vision_channels: 512
+  audio_channels: 128
+  target_sparsity: 0.03
+  homeostasis_rate: 0.01
+  k_wta_k: 16
+training:
+  augmentations:
+    vision: [crop, noise, brightness]
+    audio: [pitch, speed, noise]
+logging:
+  overlap_matrix: true
+  augmentation_robustness: true

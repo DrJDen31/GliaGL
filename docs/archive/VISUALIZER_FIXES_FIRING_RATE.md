@@ -1,6 +1,6 @@
 # [ARCHIVED] Visualizer Fixes - Firing Rate Display
 This legacy doc referenced FiringRateTracker. The codebase now uses `EMAOutputDetector` via `src/arch/output_detection.h` with configurable `default_id` and `threshold`.
-See updated overview in `docs/OUTPUT_DETECTION_OPTIONS.md` and example usage in `src/testing/xor/xor_test.cpp`.
+See updated overview in `docs/OUTPUT_DETECTION_OPTIONS.md` and example usage in `examples/xor/xor_test.cpp`.
 
 ## Original: Visualizer Fixes - Firing Rate Display
 
@@ -176,7 +176,7 @@ Press `C` to toggle tick counter on/off.
 ```cmd
 cd build
 cmake --build .
-debug\vis.exe --network ../src/testing/3class/3class_network.net --size 1500 1500
+debug\vis.exe --network ../examples/3class/3class_network.net --size 1500 1500
 
 # In visualizer:
 1. Press 'I' for inference mode

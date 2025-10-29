@@ -1,0 +1,21 @@
+# Paired binding demo
+DURATION 200
+LOOP false
+
+# image
+0 V0 200.0
+1 V3 200.0
+2 V6 200.0
+3 V9 200.0
+
+# audio
+0 A0 200.0
+1 A3 200.0
+2 A6 200.0
+3 A9 200.0
+
+# gates
+0 PLASTICITY_GATE 400.0
+0 DOPAMINE 150.0
+0 NE 90.0
+120 PLASTICITY_GATE -400.0

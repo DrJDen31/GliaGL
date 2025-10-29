@@ -2,9 +2,9 @@
 
 This directory contains a manually configured spiking neural network that implements the XOR function as described in `docs/TOY_EXAMPLES.md`.
 
-**Location:** `src/testing/xor/`
+**Location:** `examples/xor/`
 
-This is part of a series of toy examples. Each example is organized in its own subdirectory under `src/testing/`.
+This is part of a series of toy examples. Each example is organized in its own subdirectory under `examples/`.
 
 ## Overview
 
@@ -73,7 +73,7 @@ cl /EHsc /std:c++17 /Fe:xor_test.exe xor_test.cpp ..\..\arch\glia.cpp ..\..\arch
 xor_test.exe
 ```
 
-**Important**: The executable must be run from the `src/testing/xor/` directory (where `xor_network.net` is located).
+**Important**: The executable must be run from the `examples/xor/` directory (where `xor_network.net` is located).
 
 ## Expected Output
 

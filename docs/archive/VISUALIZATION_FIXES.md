@@ -67,7 +67,7 @@ cmake --build . --clean-first
 ### Run
 ```cmd
 cd C:\Users\jaden\OneDrive\Documents\AI\GliaGL\build
-debug\vis.exe --network ../src/testing/3class/3class_network.net --size 1500 1500
+debug\vis.exe --network ../examples/3class/3class_network.net --size 1500 1500
 ```
 
 ### Test Procedure

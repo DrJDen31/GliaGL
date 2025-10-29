@@ -19,18 +19,17 @@ GliaGL/
 │   │   ├── neuron.h / neuron.cpp      # Individual neuron simulation
 │   │   └── README.md                  # Architecture documentation
 │   │
-│   ├── testing/                       # Test implementations
-│   │   ├── output_detection.h         # Shared output classification utilities
-│   │   ├── README.md                  # Testing directory overview
-│   │   │
-│   │   └── xor/                       # XOR toy example
-│   │       ├── xor_test.cpp           # Test harness
-│   │       ├── xor_network.net        # Network configuration
-│   │       ├── Makefile               # Build system
-│   │       ├── README.md              # Usage guide
-│   │       └── ANALYSIS.md            # Debugging analysis & results
-│   │
 │   └── vis/                           # Visualization (existing)
+│       └── ...
+│
+├── examples/                          # Test implementations (toy examples)
+│   ├── xor/                           # XOR toy example
+│   │   ├── xor_test.cpp               # Test harness
+│   │   ├── xor_network.net            # Network configuration
+│   │   ├── Makefile                   # Build system
+│   │   ├── README.md                  # Usage guide
+│   │   └── ANALYSIS.md                # Debugging analysis & results
+│   └── 3class/                        # 3-class one-hot example
 │       └── ...
 │
 └── docs/                              # Documentation
@@ -138,7 +137,7 @@ SRC_FILES = xor_test.cpp $(ARCH_DIR)/glia.cpp $(ARCH_DIR)/neuron.cpp
 
 **Build:**
 ```bash
-cd src/testing/xor
+cd examples/xor
 make clean && make
 ```
 
@@ -218,10 +217,10 @@ To add a new toy example (e.g., 3-class classification):
 
 ```bash
 # 1. Create directory
-mkdir src/testing/3class
+mkdir examples/3class
 
 # 2. Create test file
-cat > src/testing/3class/3class_test.cpp << 'EOF'
+cat > examples/3class/3class_test.cpp << 'EOF'
 #include "../../arch/glia.h"
 #include "../../arch/neuron.h"
 #include "../output_detection.h"
@@ -236,14 +235,14 @@ int main() {
 EOF
 
 # 3. Create network config
-cat > src/testing/3class/3class_network.net << 'EOF'
+cat > examples/3class/3class_network.net << 'EOF'
 # 3-Class Network
 NEURON S0 100.0 1.0 0.0
 # ... more neurons and connections
 EOF
 
 # 4. Copy Makefile template
-cp src/testing/xor/Makefile src/testing/3class/Makefile
+cp examples/xor/Makefile examples/3class/Makefile
 # Edit: update TARGET and source filenames
 
 # 5. Create README.md
@@ -289,7 +288,7 @@ cp src/testing/xor/Makefile src/testing/3class/Makefile
 The codebase is now **well-organized and ready to scale**:
 
 - **Core engine** (`src/arch/`) contains only general-purpose simulation code
-- **Testing** (`src/testing/`) provides a clean home for examples and experiments
+- **Examples** (`examples/`) provides a clean home for examples and experiments
 - **Shared utilities** (`output_detection.h`) prevent code duplication
 - **Template established** (`xor/`) makes adding new examples straightforward
 

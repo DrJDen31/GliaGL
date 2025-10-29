@@ -4,15 +4,15 @@
 
 ```cmd
 # 1. Generate test files (each network type has its own generator)
-cd src/testing/3class
+cd examples/3class
 make -f Makefile_gentests && ./generate_tests
 
 # 2. Launch with tests
 cd ../../../build
-debug\vis.exe --network ../src/testing/3class/3class_network.net ^
-              --tests ../src/testing/3class/test_class0_5pct.seq ^
-                      ../src/testing/3class/test_class1_10pct.seq ^
-                      ../src/testing/3class/test_class2_20pct.seq
+debug\vis.exe --network ../examples/3class/3class_network.net ^
+              --tests ../examples/3class/test_class0_5pct.seq ^
+                      ../examples/3class/test_class1_10pct.seq ^
+                      ../examples/3class/test_class2_20pct.seq
 
 # 3. Run test
 Press 'I' for inference mode
@@ -75,7 +75,7 @@ LOOP false            # Loop test? true/false
 ### Each Network Type Has Its Own Generator
 
 ```
-src/testing/
+examples/
   3class/
     generate_tests.cpp       # 3-class network generator
     Makefile_gentests
@@ -90,7 +90,7 @@ src/testing/
 ### Generate Tests
 
 ```bash
-cd src/testing/3class
+cd examples/3class
 make -f Makefile_gentests
 ./generate_tests
 
@@ -170,13 +170,13 @@ vis.exe --network network.net --tests test1.seq test2.seq test3.seq
 ### Full Suite
 
 ```cmd
-vis.exe --network ../src/testing/3class/3class_network.net ^
-        --tests ../src/testing/3class/test_class0_5pct.seq ^
-                ../src/testing/3class/test_class1_10pct.seq ^
-                ../src/testing/3class/test_class2_20pct.seq ^
-                ../src/testing/3class/test_class0_10pct.seq ^
-                ../src/testing/3class/test_class1_20pct.seq ^
-                ../src/testing/3class/test_class2_30pct.seq ^
+vis.exe --network ../examples/3class/3class_network.net ^
+        --tests ../examples/3class/test_class0_5pct.seq ^
+                ../examples/3class/test_class1_10pct.seq ^
+                ../examples/3class/test_class2_20pct.seq ^
+                ../examples/3class/test_class0_10pct.seq ^
+                ../examples/3class/test_class1_20pct.seq ^
+                ../examples/3class/test_class2_30pct.seq ^
         --size 1500 1500
 # Tests mapped to keys 1-6
 ```

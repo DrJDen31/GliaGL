@@ -2,8 +2,8 @@
 
 - Examples and specs
   - docs/TOY_EXAMPLES.md – XOR, 3-class, temporal AB/BA
-  - src/testing/xor/ – XOR network, README, tests, baselines
-  - src/testing/3class/ – 3-class network, README, tests, baselines
+  - examples/xor/ – XOR network, README, tests, baselines
+  - examples/3class/ – 3-class network, README, tests, baselines
 
 - CLI training/evaluation
   - src/train/eval_main.cpp – Runner entrypoint

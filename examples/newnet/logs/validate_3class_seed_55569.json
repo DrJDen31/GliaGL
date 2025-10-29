@@ -1,9 +1,0 @@
-{
-  "scenario": "3class",
-  "accuracy": 0.666667,
-  "details": [
-    { "index": 0, "winner": "O2", "margin": 0.00273299 },
-    { "index": 1, "winner": "O1", "margin": 0.0461874 },
-    { "index": 2, "winner": "O2", "margin": 0.0237049 }
-  ]
-}

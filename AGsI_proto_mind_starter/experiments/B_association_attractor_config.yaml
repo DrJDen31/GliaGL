@@ -1,0 +1,11 @@
+# B_association_attractor_config.yaml
+seed: 0
+assoc:
+  size: 2048
+  k_wta_k: 64
+  recur_gain: 0.05
+  hetero_LTD: 0.002
+  norm_interval_ms: 25
+tests:
+  cue_completion: true
+  persistence_ms: [100, 200, 300]

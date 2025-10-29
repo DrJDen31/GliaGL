@@ -1,0 +1,39 @@
+flowchart LR
+  subgraph Encoders
+    V[Vision Encoder (SDR)]
+    A[Audio/Label Encoder (SDR)]
+  end
+
+  subgraph Index[Index (fast plastic, k-WTA)]
+    I1((Assembly))
+  end
+
+  subgraph Cortex[Association / Cortex (slow)]
+    C1((Concept Assembly))
+    C2((Concept Assembly))
+  end
+
+  subgraph GW[Global Workspace]
+    G{{Ignition & Broadcast}}
+  end
+
+  subgraph Heads[Output Heads]
+    L[Language]
+    R[Visualization]
+    M[Motor/Speech]
+  end
+
+  V --> I1
+  A --> I1
+  V --> C1
+  A --> C1
+  I1 <---> C1
+  C1 <---> C2
+  C1 --> V
+  C1 --> A
+
+  I1 --> G
+  C1 --> G
+  G --> L
+  G --> R
+  G --> M

@@ -2,9 +2,9 @@
 
 This directory contains a manually configured spiking neural network that implements 3-class one-hot classification with noise robustness as described in `docs/TOY_EXAMPLES.md`.
 
-**Location:** `src/testing/3class/`
+**Location:** `examples/3class/`
 
-This is part of a series of toy examples. Each example is organized in its own subdirectory under `src/testing/`.
+This is part of a series of toy examples. Each example is organized in its own subdirectory under `examples/`.
 
 ## Overview
 
@@ -76,7 +76,7 @@ cl /EHsc /std:c++17 /Fe:3class_test.exe 3class_test.cpp ..\..\arch\glia.cpp ..\.
 3class_test.exe
 ```
 
-**Important**: The executable must be run from the `src/testing/3class/` directory (where `3class_network.net` is located).
+**Important**: The executable must be run from the `examples/3class/` directory (where `3class_network.net` is located).
 
 ## Test Structure
 

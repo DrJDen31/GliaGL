@@ -89,7 +89,7 @@ LOOP false
 Use the provided generator:
 
 ```bash
-cd src/testing/3class
+cd examples/3class
 make -f Makefile_gentests
 ./generate_tests
 ```
@@ -127,8 +127,9 @@ void generateCustomTest(const std::string& filename) {
 ### Step 1: Generate Test Files
 
 ```bash
-cd src/testing/3class
-make -f Makefile_gentests
+cd examples/3class
+make clean && make
+./3class_test
 ./generate_tests
 ```
 
@@ -136,19 +137,20 @@ make -f Makefile_gentests
 
 ```cmd
 cd build
-debug\vis.exe --network ../src/testing/3class/3class_network.net ^
-              --tests ../src/testing/3class/test_class0_5pct.seq ^
-                      ../src/testing/3class/test_class1_10pct.seq ^
-                      ../src/testing/3class/test_class2_20pct.seq ^
+cmake --build . --clean-first
+debug\vis.exe --network ../examples/3class/3class_network.net --size 1500 1500
+            --tests ../examples/3class/test_class0_5pct.seq ^
+                      ../examples/3class/test_class1_10pct.seq ^
+                      ../examples/3class/test_class2_20pct.seq ^
               --size 1500 1500
 ```
 
 **Console output**:
 ```
 Loading 3 test sequence file(s)...
-  [1] Loaded: ../src/testing/3class/test_class0_5pct.seq (200 ticks, one-shot)
-  [2] Loaded: ../src/testing/3class/test_class1_10pct.seq (200 ticks, one-shot)
-  [3] Loaded: ../src/testing/3class/test_class2_20pct.seq (200 ticks, one-shot)
+  [1] Loaded: ../examples/3class/test_class0_5pct.seq (200 ticks, one-shot)
+  [2] Loaded: ../examples/3class/test_class1_10pct.seq (200 ticks, one-shot)
+  [3] Loaded: ../examples/3class/test_class2_20pct.seq (200 ticks, one-shot)
 
 Press Alt+[1-9] to load a test, or F1-F9 for built-in tests
 ```

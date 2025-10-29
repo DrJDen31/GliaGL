@@ -1,0 +1,8 @@
+# Recall (image only)
+DURATION 200
+LOOP false
+
+0 V0 200.0
+1 V3 200.0
+2 V6 200.0
+3 V9 200.0

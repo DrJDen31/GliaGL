@@ -28,7 +28,7 @@ LOOP false
 ### ✅ Test Generators
 - **Per-network generators**: Each network type has its own `generate_tests.cpp`
 - **Makefile**: `Makefile_gentests` for building
-- **Example**: `src/testing/3class/generate_tests.cpp`
+- **Example**: `examples/3class/generate_tests.cpp`
 
 ### ✅ Clean Architecture
 - Removed F-key tests (no backwards compatibility baggage)
@@ -81,7 +81,7 @@ LOOP false
 ```
 ┌─────────────────────────────────────────────────┐
 │ 1. Generate Tests (per network)                │
-│    cd src/testing/3class                        │
+│    cd examples/3class                          │
 │    make -f Makefile_gentests && ./generate_tests│
 └────────────────┬────────────────────────────────┘
                  │
@@ -132,7 +132,7 @@ GliaGL/
 │   │   ├── meshdata.h             # MODIFIED: seconds_per_tick
 │   │   └── OpenGLCanvas.cpp       # MODIFIED: Key bindings
 │   │
-│   └── testing/
+│   └── examples/
 │       ├── 3class/
 │       │   ├── generate_tests.cpp       # NEW: Test generator
 │       │   ├── Makefile_gentests        # NEW: Build generator
@@ -177,7 +177,7 @@ GliaGL/
 
 ```cmd
 # Terminal 1: Generate tests
-cd src/testing/3class
+cd examples/3class
 make -f Makefile_gentests
 ./generate_tests
 # Output:
@@ -188,10 +188,10 @@ make -f Makefile_gentests
 
 # Terminal 2: Launch visualizer
 cd ../../../build
-debug\vis.exe --network ../src/testing/3class/3class_network.net ^
-              --tests ../src/testing/3class/test_class0_5pct.seq ^
-                      ../src/testing/3class/test_class1_10pct.seq ^
-                      ../src/testing/3class/test_class2_20pct.seq
+debug\vis.exe --network ../examples/3class/3class_network.net ^
+              --tests ../examples/3class/test_class0_5pct.seq ^
+                      ../examples/3class/test_class1_10pct.seq ^
+                      ../examples/3class/test_class2_20pct.seq
 
 # Console output:
 #   Loading 3 test sequence file(s)...
@@ -218,12 +218,12 @@ Press 'A'         # Start again
 ## Next Steps
 
 ### For Users
-1. Generate tests: `cd src/testing/3class && make -f Makefile_gentests && ./generate_tests`
+1. Generate tests: `cd examples/3class && make -f Makefile_gentests && ./generate_tests`
 2. Launch visualizer with `--tests` flag
 3. Press 1-9 to load tests, adjust speed with `,` and `.`
 
 ### For Developers (New Networks)
-1. Create `src/testing/your_network/` directory
+1. Create `examples/your_network/` directory
 2. Copy `generate_tests.cpp` template from `3class/`
 3. Customize generator for your network's test scenarios
 4. Build and run generator to create .seq files

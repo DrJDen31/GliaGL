@@ -173,7 +173,7 @@ if (current_winner.empty()) {
 ```cmd
 cd build
 cmake --build .
-debug\vis.exe --network ../src/testing/3class/3class_network.net --size 1500 1500
+debug\vis.exe --network ../examples/3class/3class_network.net --size 1500 1500
 
 # Expected behavior:
 # - No GL errors in console
