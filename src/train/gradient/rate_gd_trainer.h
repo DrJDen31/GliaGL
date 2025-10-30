@@ -22,16 +22,26 @@ public:
 
     EpisodeMetrics evaluate(InputSequence &seq, const TrainingConfig &cfg) {
         std::vector<std::string> output_ids = collectOutputIDs();
-        OutputDetectorOptions opts; opts.threshold = cfg.detector.threshold; opts.default_id = cfg.detector.default_id;
-        EMAOutputDetector detector(cfg.detector.alpha, opts);
-        detector.reset();
+        neuron_rate.clear();
         seq.reset();
         const int U = cfg.warmup_ticks;
-        for (int t = 0; t < U; ++t) { injectFromSequence(seq); glia.step(); updateDetector(detector, output_ids); seq.advance(); }
         const int W = cfg.decision_window;
-        for (int t = 0; t < W; ++t) { injectFromSequence(seq); glia.step(); updateDetector(detector, output_ids); seq.advance(); }
-        EpisodeMetrics m; m.winner_id = detector.predict(output_ids); m.margin = detector.getMargin(output_ids);
-        for (const auto &id : output_ids) m.rates[id] = detector.getRate(id);
+        for (int t = 0; t < U + W; ++t) {
+            injectFromSequence(seq);
+            glia.step();
+            glia.forEachNeuron([&](Neuron &n){ bool f = n.didFire(); std::string nid = n.getId(); float r = 0.0f; auto itnr = neuron_rate.find(nid); if (itnr != neuron_rate.end()) r = itnr->second; float newr = (1.0f - cfg.rate_alpha) * r + cfg.rate_alpha * (f ? 1.0f : 0.0f); if (itnr != neuron_rate.end()) itnr->second = newr; else neuron_rate.emplace(nid, newr); });
+            seq.advance();
+        }
+        EpisodeMetrics m;
+        float top1 = -1e9f, top2 = -1e9f; std::string win;
+        for (const auto &id : output_ids) {
+            float r = 0.0f; auto it = neuron_rate.find(id); if (it != neuron_rate.end()) r = it->second;
+            m.rates[id] = r;
+            if (r > top1) { top2 = top1; top1 = r; win = id; }
+            else if (r > top2) { top2 = r; }
+        }
+        m.winner_id = win;
+        m.margin = (top1 > -1e8f && top2 > -1e8f) ? (top1 - top2) : 0.0f;
         m.ticks_run = U + W; return m;
     }
 
@@ -115,9 +125,7 @@ private:
                                                               const std::string &target_id,
                                                               EpisodeMetrics *out) {
         std::vector<std::string> output_ids = collectOutputIDs();
-        OutputDetectorOptions opts; opts.threshold = cfg.detector.threshold; opts.default_id = cfg.detector.default_id;
-        EMAOutputDetector detector(cfg.detector.alpha, opts);
-        detector.reset(); seq.reset();
+        neuron_rate.clear(); seq.reset();
         std::unordered_map<std::string, float> elig;
         const int U = cfg.warmup_ticks; const int W = cfg.decision_window;
         for (int t = 0; t < U + W; ++t) {
@@ -125,14 +133,14 @@ private:
             std::unordered_map<std::string, bool> fired;
             glia.forEachNeuron([&](Neuron &n){ bool f = n.didFire(); std::string nid = n.getId(); fired.emplace(nid, f); float r = 0.0f; auto itnr = neuron_rate.find(nid); if (itnr != neuron_rate.end()) r = itnr->second; float newr = (1.0f - cfg.rate_alpha) * r + cfg.rate_alpha * (f ? 1.0f : 0.0f); if (itnr != neuron_rate.end()) itnr->second = newr; else neuron_rate.emplace(nid, newr); });
             glia.forEachNeuron([&](Neuron &from){ std::string from_id = from.getId(); const auto &conns = from.getConnections(); for (const auto &kv : conns) { std::string to_id = kv.first; std::string k = edge_key(from_id, to_id); float e_prev = 0.0f; auto itE = elig.find(k); if (itE != elig.end()) e_prev = itE->second; float pre = 0.0f; auto itPre = neuron_rate.find(from_id); if (itPre != neuron_rate.end()) pre = itPre->second; float e_new = cfg.elig_lambda * e_prev + pre; if (itE != elig.end()) itE->second = e_new; else elig.emplace(std::move(k), e_new); }});
-            updateDetector(detector, output_ids); seq.advance();
+            seq.advance();
         }
         EpisodeMetrics m;
-        m.winner_id = detector.predict(output_ids);
-        m.margin = detector.getMargin(output_ids);
+        float top1 = -1e9f, top2 = -1e9f; std::string win;
         for (const auto &id : output_ids) {
-            m.rates[id] = detector.getRate(id);
+            float r = 0.0f; auto it = neuron_rate.find(id); if (it != neuron_rate.end()) r = it->second; m.rates[id] = r; if (r > top1) { top2 = top1; top1 = r; win = id; } else if (r > top2) { top2 = r; }
         }
+        m.winner_id = win; m.margin = (top1 > -1e8f && top2 > -1e8f) ? (top1 - top2) : 0.0f;
         m.ticks_run = U + W;
         if (out) *out = m;
         std::unordered_map<std::string, float> grad;
