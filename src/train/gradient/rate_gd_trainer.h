@@ -104,6 +104,10 @@ private:
     std::mt19937 rng;
     std::vector<double> epoch_acc_hist;
     std::vector<double> epoch_margin_hist;
+    // Adam optimizer state
+    std::unordered_map<std::string, float> adam_m;
+    std::unordered_map<std::string, float> adam_v;
+    int adam_step = 0;
 
     static inline std::string edge_key(const std::string &a, const std::string &b) { return a + "|" + b; }
 
@@ -209,7 +213,59 @@ private:
     void applyGradients(const std::unordered_map<std::string, float> &grad,
                         float scale,
                         const TrainingConfig &cfg) {
-        glia.forEachNeuron([&](Neuron &from){ const auto &conns = from.getConnections(); for (const auto &kv : conns) { const std::string &to_id = kv.first; const std::string k = edge_key(from.getId(), to_id); float w = kv.second.first; auto it = grad.find(k); if (it != grad.end()) { w -= cfg.lr * scale * it->second; } w -= cfg.weight_decay * w; if (cfg.weight_clip > 0.0f) { float c = cfg.weight_clip; if (w > c) w = c; else if (w < -c) w = -c; } from.setTransmitter(to_id, w); }});
+        // Optional gradient norm clipping (global L2 over provided grad map)
+        float clip_scale = 1.0f;
+        if (cfg.grad.clip_grad_norm > 0.0f) {
+            double sumsq = 0.0; for (const auto &kv : grad) { double g = (double)kv.second * (double)scale; sumsq += g * g; }
+            double norm = std::sqrt(std::max(1e-30, sumsq));
+            if (norm > (double)cfg.grad.clip_grad_norm) {
+                clip_scale = (float)((double)cfg.grad.clip_grad_norm / norm);
+            }
+        }
+        bool use_adam = (cfg.grad.optimizer == "adam");
+        bool use_adamw = (cfg.grad.optimizer == "adamw");
+        if (use_adam || use_adamw) adam_step = std::max(1, adam_step + 1);
+        glia.forEachNeuron([&](Neuron &from){
+            const auto &conns = from.getConnections();
+            for (const auto &kv : conns) {
+                const std::string &to_id = kv.first;
+                const std::string k = edge_key(from.getId(), to_id);
+                float w = kv.second.first;
+                auto itg = grad.find(k);
+                float g = (itg != grad.end()) ? (itg->second * scale * clip_scale) : 0.0f;
+                if (use_adam || use_adamw) {
+                    float b1 = cfg.grad.adam_beta1;
+                    float b2 = cfg.grad.adam_beta2;
+                    float eps = cfg.grad.adam_eps > 0.0f ? cfg.grad.adam_eps : 1e-8f;
+                    float m = 0.0f, v = 0.0f;
+                    auto itm = adam_m.find(k); if (itm != adam_m.end()) m = itm->second;
+                    auto itv = adam_v.find(k); if (itv != adam_v.end()) v = itv->second;
+                    m = b1 * m + (1.0f - b1) * g;
+                    v = b2 * v + (1.0f - b2) * (g * g);
+                    adam_m[k] = m; adam_v[k] = v;
+                    double bias1 = 1.0 - std::pow((double)b1, (double)adam_step);
+                    double bias2 = 1.0 - std::pow((double)b2, (double)adam_step);
+                    double mhat = (double)m / (bias1 > 1e-20 ? bias1 : 1.0);
+                    double vhat = (double)v / (bias2 > 1e-20 ? bias2 : 1.0);
+                    // AdamW: decoupled weight decay as separate step scaled by lr
+                    if (use_adamw && cfg.weight_decay > 0.0f) {
+                        w -= cfg.lr * cfg.weight_decay * w;
+                    }
+                    // Parameter update
+                    w -= cfg.lr * (float)(mhat / (std::sqrt(vhat) + (double)eps));
+                } else {
+                    w -= cfg.lr * g;
+                }
+                // Coupled L2 decay for SGD/Adam only (AdamW handled above)
+                if (!use_adamw && cfg.weight_decay > 0.0f) {
+                    w -= cfg.weight_decay * w;
+                }
+                if (cfg.weight_clip > 0.0f) {
+                    float c = cfg.weight_clip; if (w > c) w = c; else if (w < -c) w = -c;
+                }
+                from.setTransmitter(to_id, w);
+            }
+        });
     }
 
     void postBatchPlasticity(const TrainingConfig &cfg) {

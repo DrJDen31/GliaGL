@@ -39,6 +39,13 @@ struct Args {
     float lambda_ = 0.95f;
     float weight_decay = 1e-4f;
     float gd_temperature = 1.0f;
+    // Optimizer selection / params
+    std::string optimizer = "sgd"; // "sgd" | "adam"
+    float adam_beta1 = 0.9f;
+    float adam_beta2 = 0.999f;
+    float adam_eps = 1e-8f;
+    float clip_grad_norm = 0.0f; // 0 = disabled
+    float weight_clip = 0.0f;    // 0 = disabled; else clip to [-c, c]
     // Output paths
     std::string save_net = "digits_trained.net";
     std::string train_metrics_json = "digits_train_metrics.json";
@@ -66,6 +73,12 @@ static bool parse_args(int argc, char** argv, Args &a) {
         else if (k == "--lambda") { std::string v; if (!next(v)) return false; a.lambda_ = std::atof(v.c_str()); }
         else if (k == "--weight_decay") { std::string v; if (!next(v)) return false; a.weight_decay = std::atof(v.c_str()); }
         else if (k == "--gd_temperature") { std::string v; if (!next(v)) return false; a.gd_temperature = std::atof(v.c_str()); }
+        else if (k == "--optimizer") { if (!next(a.optimizer)) return false; }
+        else if (k == "--adam_beta1") { std::string v; if (!next(v)) return false; a.adam_beta1 = std::atof(v.c_str()); }
+        else if (k == "--adam_beta2") { std::string v; if (!next(v)) return false; a.adam_beta2 = std::atof(v.c_str()); }
+        else if (k == "--adam_eps") { std::string v; if (!next(v)) return false; a.adam_eps = std::atof(v.c_str()); }
+        else if (k == "--clip_grad_norm") { std::string v; if (!next(v)) return false; a.clip_grad_norm = std::atof(v.c_str()); }
+        else if (k == "--weight_clip") { std::string v; if (!next(v)) return false; a.weight_clip = std::atof(v.c_str()); }
         else if (k == "--save_net") { if (!next(a.save_net)) return false; }
         else if (k == "--train_metrics_json") { if (!next(a.train_metrics_json)) return false; }
         else if (k == "--train_metrics_csv") { if (!next(a.train_metrics_csv)) return false; }
@@ -285,6 +298,12 @@ int main(int argc, char** argv) {
     cfg.log_every = 1;
     cfg.seed = args.seed;
     cfg.grad.temperature = args.gd_temperature;
+    cfg.grad.optimizer = args.optimizer;
+    cfg.grad.adam_beta1 = args.adam_beta1;
+    cfg.grad.adam_beta2 = args.adam_beta2;
+    cfg.grad.adam_eps = args.adam_eps;
+    cfg.grad.clip_grad_norm = args.clip_grad_norm;
+    cfg.weight_clip = args.weight_clip;
 
     // Trainers
     Trainer hebb_trainer(net);
