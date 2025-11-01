@@ -42,6 +42,8 @@ from ._core import (
     Neuron,
     InputSequence,
     TrainingConfig,
+    GradConfig,
+    OutputDetectorConfig,
     EpisodeData,
     EpisodeMetrics,
     EvolutionConfig,
@@ -50,6 +52,7 @@ from ._core import (
     EvolutionResult,
     EdgeRecord,
     NeuronRecord,
+    RateGDTrainer,  # Gradient-based trainer for supervised learning
 )
 
 # Visualization (optional - only if dependencies installed)
@@ -78,6 +81,8 @@ __all__ = [
     "Neuron",
     "InputSequence",
     "TrainingConfig",
+    "GradConfig",
+    "OutputDetectorConfig",
     "EpisodeData",
     "EpisodeMetrics",
     "EvolutionConfig",

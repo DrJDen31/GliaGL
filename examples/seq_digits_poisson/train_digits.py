@@ -126,9 +126,12 @@ def main():
     parser.add_argument('--data', type=str, default=None, help='Data root directory')
     parser.add_argument('--epochs', type=int, default=10, help='Training epochs')
     parser.add_argument('--batch-size', type=int, default=16, help='Batch size')
-    parser.add_argument('--lr', type=float, default=0.01, help='Learning rate')
-    parser.add_argument('--warmup', type=int, default=20, help='Warmup ticks')
-    parser.add_argument('--decision-window', type=int, default=80, help='Decision window for output detection')
+    parser.add_argument('--lr', type=float, default=0.01, help='Initial learning rate')
+    parser.add_argument('--lr-schedule', type=str, default='cosine', choices=['cosine', 'step', 'none'], 
+                        help='Learning rate schedule (cosine=smooth decay, step=periodic drops, none=constant)')
+    parser.add_argument('--optimizer', type=str, default='adamw', choices=['sgd', 'adam', 'adamw'], help='Optimizer')
+    parser.add_argument('--warmup', type=int, default=5, help='Warmup ticks')
+    parser.add_argument('--decision-window', type=int, default=35, help='Decision window for output detection')
     parser.add_argument('--save', type=str, default=None, help='Save path')
     parser.add_argument('--results', type=str, default=None, help='Results directory')
     parser.add_argument('--seed', type=int, default=42, help='Random seed')
@@ -178,13 +181,29 @@ def main():
         return 1
     
     # Training configuration
+    # Note: Using gradient-based trainer (RateGDTrainer) which doesn't use the Hebbian
+    # reward/eligibility parameters. It uses softmax cross-entropy gradient descent.
     config = glia.create_config(
         lr=args.lr,
         batch_size=args.batch_size,
         warmup_ticks=args.warmup,
         decision_window=args.decision_window,
-        verbose=False
+        optimizer=args.optimizer,  # Optimizer selection (sgd, adam, adamw)
+        weight_decay=0.0001,     # L2 regularization  
+        rate_alpha=0.05,         # EMA smoothing for neuron rates
+        verbose=False            # We'll handle progress output ourselves
     )
+    
+    # Display training configuration
+    schedule_desc = {
+        'cosine': 'Cosine annealing (smooth decay)',
+        'step': 'Step decay (periodic drops)',
+        'none': 'Constant LR'
+    }
+    print(f"\nTraining config:")
+    print(f"  • Learning rate: {args.lr} ({schedule_desc.get(args.lr_schedule, args.lr_schedule)})")
+    print(f"  • Batch size: {args.batch_size}")
+    print(f"  • Optimizer: {args.optimizer.upper()}")
     
     # Evaluate before training
     print("\n" + "-" * 70)
@@ -197,16 +216,18 @@ def main():
     
     # Train
     print("\n" + "-" * 70)
-    print(f"Training for {args.epochs} epochs")
+    print(f"Training for {args.epochs} epochs with LR scheduling")
     print("-" * 70)
     trainer = glia.Trainer(net, config)
     
-    # Train with progress reporting
+    # Train with LR scheduling and per-epoch progress
+    lr_schedule = None if args.lr_schedule == 'none' else args.lr_schedule
     history = trainer.train(
         train_data.episodes,
         epochs=args.epochs,
         config=config,
-        on_epoch=lambda e, acc, margin: print(f"Epoch {e+1}/{args.epochs}: Train acc={acc:.2%}, Margin={margin:.3f}")
+        verbose=True,
+        lr_schedule=lr_schedule
     )
     
     # Final evaluation
@@ -219,6 +240,11 @@ def main():
     print(f"Training accuracy: {train_acc_after:.2%}")
     print(f"Test accuracy: {test_acc_after:.2%}")
     print(f"Improvement: {(test_acc_after - test_acc_before)*100:.1f} percentage points")
+    
+    # Show learning rate effect (final vs initial)
+    if lr_schedule:
+        final_lr = config.lr  # Will be restored to initial
+        print(f"\nLR schedule: {args.lr:.6f} → {final_lr * 0.01:.6f} ({lr_schedule})")
     
     # Confusion matrix
     conf_matrix = compute_confusion_matrix(test_preds)

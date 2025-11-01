@@ -11,6 +11,7 @@ class Trainer:
     """
     Neural network trainer with Python callback support
     
+    Uses gradient-based learning (RateGDTrainer) by default for supervised learning.
     This wrapper adds:
     - Epoch-level Python callbacks during training
     - Better history tracking
@@ -25,16 +26,22 @@ class Trainer:
         ... )
     """
     
-    def __init__(self, network: Network, config: Optional[_core.TrainingConfig] = None):
+    def __init__(self, network: Network, config: Optional[_core.TrainingConfig] = None, use_gradient: bool = True):
         """
         Create trainer
         
         Args:
             network: Network to train
             config: Training configuration (uses defaults if None)
+            use_gradient: If True, uses gradient-based trainer (recommended for supervised learning).
+                         If False, uses Hebbian/reinforcement learning trainer.
         """
         self._network = network
-        self._trainer = _core.Trainer(network._cpp)
+        # Use gradient trainer by default (was causing the bug!)
+        if use_gradient:
+            self._trainer = _core.RateGDTrainer(network._cpp)
+        else:
+            self._trainer = _core.Trainer(network._cpp)
         self._config = config or _core.TrainingConfig()
         self._history: Dict[str, List[float]] = {
             'accuracy': [],
@@ -90,10 +97,11 @@ class Trainer:
         epochs: int = 10,
         config: Optional[_core.TrainingConfig] = None,
         on_epoch: Optional[Callable[[int, float, float], None]] = None,
-        verbose: bool = True
+        verbose: bool = True,
+        lr_schedule: Optional[str] = 'cosine'  # 'cosine', 'step', or None
     ) -> Dict[str, List[float]]:
         """
-        Train for multiple epochs with Python callback support
+        Train for multiple epochs with Python callback support and LR scheduling
         
         This method manually implements the training loop to support
         Python callbacks, unlike train_epoch_fast() which releases the GIL.
@@ -103,14 +111,44 @@ class Trainer:
             epochs: Number of epochs
             config: Training configuration
             on_epoch: Callback(epoch, accuracy, margin) called after each epoch
-            verbose: Print progress
+            verbose: Print progress with progress bar (per-epoch progress)
+            lr_schedule: Learning rate schedule ('cosine', 'step', or None)
+                        'cosine': Smooth cosine annealing from initial LR to 0.01x
+                        'step': Decay by 0.5 every 1/3 of epochs
             
         Returns:
             Training history dictionary
         """
         cfg = config or self._config
+        initial_lr = cfg.lr
+        
+        # Learning rate schedule function
+        def get_lr(epoch: int) -> float:
+            if lr_schedule == 'cosine':
+                # Cosine annealing: smooth decay from initial_lr to initial_lr * 0.01
+                import math
+                min_lr = initial_lr * 0.01
+                return min_lr + (initial_lr - min_lr) * 0.5 * (1 + math.cos(math.pi * epoch / epochs))
+            elif lr_schedule == 'step':
+                # Step decay: reduce by 0.5 every 1/3 of epochs
+                decay_epochs = max(1, epochs // 3)
+                factor = 0.5 ** (epoch // decay_epochs)
+                return initial_lr * factor
+            else:
+                return initial_lr
         
         for epoch in range(epochs):
+            # Update learning rate
+            cfg.lr = get_lr(epoch)
+            
+            # Progress tracking for this epoch
+            num_batches = (len(dataset) + cfg.batch_size - 1) // cfg.batch_size
+            
+            if verbose:
+                # Start-of-epoch message
+                epoch_width = len(str(epochs))
+                print(f"Epoch {epoch+1:>{epoch_width}}/{epochs} [LR={cfg.lr:.6f}]", end='')
+            
             # Train one epoch (GIL released in C++)
             self._trainer.train_epoch(dataset, 1, cfg)
             
@@ -126,14 +164,16 @@ class Trainer:
                 self._history['accuracy'].append(accuracy)
                 self._history['margin'].append(margin)
                 
-                # Callback
+                # End-of-epoch status
+                if verbose:
+                    print(f"  →  Acc: {accuracy:>6.2%}, Margin: {margin:.3f}")
+                
+                # Custom callback
                 if on_epoch:
                     on_epoch(epoch, accuracy, margin)
-                
-                # Print
-                if verbose and (epoch % max(1, epochs // 10) == 0 or epoch == epochs - 1):
-                    print(f"Epoch {epoch+1}/{epochs}: "
-                          f"Acc={accuracy:.2%}, Margin={margin:.3f}")
+        
+        # Restore original learning rate
+        cfg.lr = initial_lr
         
         return self._history
     

@@ -262,6 +262,10 @@ def create_config(
     batch_size: int = 1,
     warmup_ticks: int = 50,
     decision_window: int = 50,
+    optimizer: str = "sgd",
+    adam_beta1: float = 0.9,
+    adam_beta2: float = 0.999,
+    adam_eps: float = 1e-8,
     **kwargs
 ) -> _core.TrainingConfig:
     """
@@ -272,6 +276,10 @@ def create_config(
         batch_size: Batch size
         warmup_ticks: Warmup timesteps before decision window
         decision_window: Window for output detection
+        optimizer: Optimizer type: 'sgd', 'adam', or 'adamw'
+        adam_beta1: Adam beta1 parameter (for adam/adamw)
+        adam_beta2: Adam beta2 parameter (for adam/adamw)
+        adam_eps: Adam epsilon for numerical stability
         **kwargs: Additional config parameters
         
     Returns:
@@ -282,6 +290,12 @@ def create_config(
     config.batch_size = batch_size
     config.warmup_ticks = warmup_ticks
     config.decision_window = decision_window
+    
+    # Set optimizer configuration
+    config.grad.optimizer = optimizer
+    config.grad.adam_beta1 = adam_beta1
+    config.grad.adam_beta2 = adam_beta2
+    config.grad.adam_eps = adam_eps
     
     # Apply additional kwargs
     for key, value in kwargs.items():
