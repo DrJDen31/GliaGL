@@ -99,11 +99,11 @@ Adds a connection from the axon of this cell to the dendrite of another
 
 PARAMS:
     transmitter: value to send when this cell fires
-    neuron: address of the receiving cell
+    neuron: shared_ptr to the receiving cell
 */
-void Neuron::addConnection(float transmitter, Neuron &neuron)
+void Neuron::addConnection(float transmitter, std::shared_ptr<Neuron> neuron)
 {
-    this->connections[neuron.id] = std::make_pair(transmitter, &neuron);
+    this->connections[neuron->id] = std::make_pair(transmitter, neuron);
 }
 
 /*
@@ -222,7 +222,7 @@ void Neuron::fire()
     // send transmissions
     for (auto itr = connections.begin(); itr != connections.end(); ++itr)
     {
-        Neuron* dst = itr->second.second;
+        auto dst = itr->second.second;  // shared_ptr<Neuron>
         if (!dst) continue;
         dst->receive(itr->second.first);
     }

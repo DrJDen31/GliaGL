@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <memory>
 /*
 Class representing a single neuron cell, each connecting to various other cells that it forwards its message to
 */
@@ -24,13 +25,13 @@ public:
     void setResting(float new_resting);
 
     // modifiers
-    void addConnection(float transmitter, Neuron &neuron);
+    void addConnection(float transmitter, std::shared_ptr<Neuron> neuron);
     void receive(float transmission);
     void tick();
 
     // training
     const std::string &getId() const { return id; }
-    const std::map<std::string, std::pair<float, Neuron *>> &getConnections() const { return connections; }
+    const std::map<std::string, std::pair<float, std::shared_ptr<Neuron>>> &getConnections() const { return connections; }
     void removeConnection(const std::string &to) { connections.erase(to); }
     bool didFire() const { return just_fired; }
 
@@ -51,8 +52,8 @@ private:
     int complexity;                                                // represents the complexity of the circuit - how many neurons there are
     bool using_tick;                                               // states whether tick is being used
     std::string id;                                                // unique ID of the cell
-    std::map<std::string, std::pair<float, Neuron *>> connections; // map of all cells whose dendrites receive from this cells axon
-    // key is ID of the receiving cell, value is a pair containing the transmission and a pointer to the receiving cell
+    std::map<std::string, std::pair<float, std::shared_ptr<Neuron>>> connections; // map of all cells whose dendrites receive from this cells axon
+    // key is ID of the receiving cell, value is a pair containing the transmission and a shared_ptr to the receiving cell
 
     // training
     bool just_fired = false; // states whether neuron fired this step

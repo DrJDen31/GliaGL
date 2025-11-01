@@ -121,7 +121,7 @@ private:
         auto inputs = seq.getCurrentInputs(); for (const auto &kv : inputs) glia.injectSensory(kv.first, kv.second);
     }
     void updateDetector(IOutputDetector &detector, const std::vector<std::string> &output_ids) {
-        for (const auto &id : output_ids) { Neuron *n = glia.getNeuronById(id); if (n) detector.update(id, n->didFire()); }
+        for (const auto &id : output_ids) { auto n = glia.getNeuronById(id); if (n) detector.update(id, n->didFire()); }
     }
 
     std::unordered_map<std::string, float> computeEpisodeGrad(InputSequence &seq,
@@ -270,7 +270,7 @@ private:
 
     void postBatchPlasticity(const TrainingConfig &cfg) {
         std::vector<std::pair<std::string,std::string>> to_remove; glia.forEachNeuron([&](Neuron &from){ const auto &conns = from.getConnections(); for (const auto &kv : conns) { const std::string &to_id = kv.first; const std::string k = edge_key(from.getId(), to_id); float w = kv.second.first; if (std::fabs(w) < cfg.prune_epsilon) to_remove.emplace_back(from.getId(), to_id); }});
-        for (auto &edge : to_remove) { Neuron *from = glia.getNeuronById(edge.first); if (from) from->removeConnection(edge.second); }
+        for (auto &edge : to_remove) { auto from = glia.getNeuronById(edge.first); if (from) from->removeConnection(edge.second); }
         if (cfg.grow_edges > 0) {
             std::vector<std::string> all_ids = collectAllIDs(); std::uniform_int_distribution<size_t> dist_idx(0, all_ids.size() ? all_ids.size() - 1 : 0); std::uniform_real_distribution<float> dist_sign(-1.0f, 1.0f);
             int grown = 0; int attempts = 0;
@@ -280,13 +280,13 @@ private:
                 const std::string &to_id = all_ids[dist_idx(rng)];
                 if (!cfg.topology.edgeAllowed(from_id, to_id)) continue;
                 if (from_id == to_id) continue;
-                Neuron *from = glia.getNeuronById(from_id);
-                Neuron *to = glia.getNeuronById(to_id);
+                auto from = glia.getNeuronById(from_id);
+                auto to = glia.getNeuronById(to_id);
                 if (!from || !to) continue;
                 const auto &conns = from->getConnections();
                 if (conns.find(to_id) != conns.end()) continue;
                 float w = cfg.init_weight * (dist_sign(rng) >= 0 ? 1.0f : -1.0f);
-                from->addConnection(w, *to);
+                from->addConnection(w, to);
                 grown++;
             }
         }

@@ -1,0 +1,39 @@
+# Include C++ source files
+recursive-include src *.cpp *.h
+recursive-include include *.h
+
+# Include CMake files
+include python/CMakeLists.txt
+include CMakeLists.txt
+
+# Include Python package
+recursive-include python/glia *.py
+
+# Include documentation
+include README.md
+include INSTALL.md
+include LICENSE
+include CHANGELOG.md
+
+# Include examples
+recursive-include examples *.py *.net *.seq
+
+# Include docs
+recursive-include docs *.md
+
+# Exclude build artifacts
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude __pycache__
+global-exclude *.so
+global-exclude *.dylib
+global-exclude *.dll
+global-exclude .DS_Store
+global-exclude *.swp
+
+# Exclude build directories
+prune build
+prune dist
+prune *.egg-info
+prune src/train/build
+prune src/vis/build

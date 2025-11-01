@@ -1,0 +1,73 @@
+[build-system]
+requires = ["scikit-build-core>=0.5", "pybind11>=2.11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "glia"
+version = "0.1.0"
+description = "Fast spiking neural network simulator with Python bindings"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "GliaGL Contributors"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: C++",
+]
+dependencies = [
+    "numpy>=1.20",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "mypy>=1.0",
+    "jupyter>=1.0",
+]
+viz = [
+    "matplotlib>=3.5",
+    "networkx>=2.6",
+]
+all = [
+    "glia[dev,viz]",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/GliaGL"
+Documentation = "https://github.com/yourusername/GliaGL/docs"
+Repository = "https://github.com/yourusername/GliaGL"
+
+[tool.scikit-build]
+cmake.build-type = "Release"
+cmake.source-dir = "python"
+wheel.packages = ["python/glia"]
+
+[tool.scikit-build.cmake.define]
+PYTHON_EXECUTABLE = {env="PYTHON_EXECUTABLE", default="python"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

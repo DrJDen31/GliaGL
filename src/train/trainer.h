@@ -252,7 +252,7 @@ public:
             }
         });
         for (auto &edge : to_remove) {
-            Neuron *from = glia.getNeuronById(edge.first);
+            auto from = glia.getNeuronById(edge.first);
             if (from) from->removeConnection(edge.second);
         }
 
@@ -268,13 +268,13 @@ public:
                 const std::string &to_id = all_ids[dist_idx(rng)];
                 if (!cfg.topology.edgeAllowed(from_id, to_id)) continue;
                 if (from_id == to_id) continue;
-                Neuron *from = glia.getNeuronById(from_id);
-                Neuron *to = glia.getNeuronById(to_id);
+                auto from = glia.getNeuronById(from_id);
+                auto to = glia.getNeuronById(to_id);
                 if (!from || !to) continue;
                 const auto &conns = from->getConnections();
                 if (conns.find(to_id) != conns.end()) continue;
                 float w = cfg.init_weight * (dist_sign(rng) >= 0 ? 1.0f : -1.0f);
-                from->addConnection(w, *to);
+                from->addConnection(w, to);
                 grown++;
             }
         }
@@ -326,8 +326,8 @@ public:
                     ctr = 0; // reset after pruning trigger
                 }
             });
-            for (auto &edge : to_remove_out) { Neuron *from = glia.getNeuronById(edge.first); if (from) from->removeConnection(edge.second); }
-            for (auto &edge : to_remove_in) { Neuron *from = glia.getNeuronById(edge.first); if (from) from->removeConnection(edge.second); }
+            for (auto &edge : to_remove_out) { auto from = glia.getNeuronById(edge.first); if (from) from->removeConnection(edge.second); }
+            for (auto &edge : to_remove_in) { auto from = glia.getNeuronById(edge.first); if (from) from->removeConnection(edge.second); }
         }
     }
 
@@ -498,7 +498,7 @@ public:
         });
 
         for (auto &edge : to_remove) {
-            Neuron *from = glia.getNeuronById(edge.first);
+            auto from = glia.getNeuronById(edge.first);
             if (from) from->removeConnection(edge.second);
         }
 
@@ -514,13 +514,13 @@ public:
                 const std::string &to_id = all_ids[dist_idx(rng)];
                 if (!cfg.topology.edgeAllowed(from_id, to_id)) continue;
                 if (from_id == to_id) continue;
-                Neuron *from = glia.getNeuronById(from_id);
-                Neuron *to = glia.getNeuronById(to_id);
+                auto from = glia.getNeuronById(from_id);
+                auto to = glia.getNeuronById(to_id);
                 if (!from || !to) continue;
                 const auto &conns = from->getConnections();
                 if (conns.find(to_id) != conns.end()) continue;
                 float w = cfg.init_weight * (dist_sign(rng) >= 0 ? 1.0f : -1.0f);
-                from->addConnection(w, *to);
+                from->addConnection(w, to);
                 grown++;
             }
         }
@@ -641,16 +641,16 @@ private:
         });
         // Restore weights and add missing edges
         for (const auto &e : s.edges) {
-            Neuron *from = glia.getNeuronById(e.from);
-            Neuron *to = glia.getNeuronById(e.to);
+            auto from = glia.getNeuronById(e.from);
+            auto to = glia.getNeuronById(e.to);
             if (!from || !to) continue;
             const auto &conns = from->getConnections();
-            if (conns.find(e.to) == conns.end()) from->addConnection(e.w, *to);
+            if (conns.find(e.to) == conns.end()) from->addConnection(e.w, to);
             else from->setTransmitter(e.to, e.w);
         }
         // Restore neuron params
         for (const auto &r : s.neurons) {
-            Neuron *n = glia.getNeuronById(r.id);
+            auto n = glia.getNeuronById(r.id);
             if (!n) continue;
             n->setThreshold(r.thr);
             n->setLeak(r.leak);
@@ -700,7 +700,7 @@ private:
 
     void updateDetector(IOutputDetector &detector, const std::vector<std::string> &output_ids) {
         for (const auto &id : output_ids) {
-            Neuron *n = glia.getNeuronById(id);
+            auto n = glia.getNeuronById(id);
             if (n) detector.update(id, n->didFire());
         }
     }

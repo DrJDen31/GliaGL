@@ -14,9 +14,7 @@ Glia::Glia()
 
 Glia::~Glia()
 {
-    // Delete dynamically allocated neurons
-    for (auto *n : sensory_neurons) delete n;
-    for (auto *n : neurons) delete n;
+    // shared_ptr handles cleanup automatically
     sensory_neurons.clear();
     neurons.clear();
     sensory_mapping.clear();
@@ -31,8 +29,8 @@ Glia::Glia(int num_sensory, int num_neurons)
 		// ID string
 		std::string id = "S" + std::to_string(i);
 
-		// Neuron object
-		Neuron *neuron = new Neuron(id, num_sensory + num_neurons, 70.f, 1, 4, 100.f, true);
+		// Neuron object (managed via shared_ptr)
+		auto neuron = std::make_shared<Neuron>(id, num_sensory + num_neurons, 70.f, 1, 4, 100.f, true);
 		sensory_neurons.push_back(neuron);
 		// mapping
 		sensory_mapping[id] = neuron;
@@ -43,7 +41,7 @@ Glia::Glia(int num_sensory, int num_neurons)
 	for (int i = 0; i < num_neurons; i++)
 	{
 		std::string id = "N" + std::to_string(i);
-		Neuron *neuron = new Neuron(id, num_sensory + num_neurons, 70.f, 1, 4, 100.0f, true);
+		auto neuron = std::make_shared<Neuron>(id, num_sensory + num_neurons, 70.f, 1, 4, 100.0f, true);
 		neurons.push_back(neuron);
 		neuron_mapping[id] = neuron;
 	}
@@ -129,19 +127,19 @@ void Glia::configureNetworkFromFile(std::string filepath, bool verbose)
     }
 
     if (has_newnet) {
-        auto make_neuron = [&](const std::string &id, float thr, float leak){
+        auto make_neuron = [&](const std::string &id, float thr, float leak) -> std::shared_ptr<Neuron> {
             int comp = (int)(sensory_neurons.size() + neurons.size()) + 1;
-            Neuron *n = new Neuron(id, comp, /*resting*/0.0f, /*leak*/leak, /*refractory*/4, /*threshold*/thr, /*tick*/true);
+            auto n = std::make_shared<Neuron>(id, comp, /*resting*/0.0f, /*leak*/leak, /*refractory*/4, /*threshold*/thr, /*tick*/true);
             n->setThreshold(thr); n->setLeak(leak); n->setResting(0.0f);
             if (!id.empty() && id[0] == 'S') { sensory_neurons.push_back(n); sensory_mapping[id] = n; }
             else { neurons.push_back(n); neuron_mapping[id] = n; }
             return n;
         };
 
-        std::vector<Neuron*> Svec; Svec.reserve(nn.S);
-        std::vector<Neuron*> Hvec; Hvec.reserve(nn.H);
-        std::vector<Neuron*> Ovec; Ovec.reserve(nn.O);
-        Neuron *Npool = nullptr;
+        std::vector<std::shared_ptr<Neuron>> Svec; Svec.reserve(nn.S);
+        std::vector<std::shared_ptr<Neuron>> Hvec; Hvec.reserve(nn.H);
+        std::vector<std::shared_ptr<Neuron>> Ovec; Ovec.reserve(nn.O);
+        std::shared_ptr<Neuron> Npool = nullptr;
 
         for (int i=0;i<nn.S;++i) Svec.push_back(make_neuron("S"+std::to_string(i), nn.thr_S, nn.leak_S));
         for (int i=0;i<nn.H;++i) Hvec.push_back(make_neuron("H"+std::to_string(i), nn.thr_H, nn.leak_H));
@@ -151,24 +149,24 @@ void Glia::configureNetworkFromFile(std::string filepath, bool verbose)
         std::random_device rd; std::mt19937 rng(rd());
         std::uniform_real_distribution<float> U01(0.0f, 1.0f);
 
-        struct Edge { Neuron* from; Neuron* to; bool is_pool_edge; };
+        struct Edge { std::shared_ptr<Neuron> from; std::shared_ptr<Neuron> to; bool is_pool_edge; };
         std::vector<Edge> edges;
-        auto maybe_connect = [&](Neuron* a, Neuron* b, float dens){ if (a && b && U01(rng) < dens) { a->addConnection(0.0f, *b); edges.push_back({a,b,false}); } };
+        auto maybe_connect = [&](std::shared_ptr<Neuron> a, std::shared_ptr<Neuron> b, float dens){ if (a && b && U01(rng) < dens) { a->addConnection(0.0f, b); edges.push_back({a,b,false}); } };
 
         // S->H, S->O
-        for (auto *s : Svec) for (auto *h : Hvec) maybe_connect(s,h,nn.dens_SH);
-        for (auto *s : Svec) for (auto *o : Ovec) maybe_connect(s,o,nn.dens_SO);
+        for (auto &s : Svec) for (auto &h : Hvec) maybe_connect(s,h,nn.dens_SH);
+        for (auto &s : Svec) for (auto &o : Ovec) maybe_connect(s,o,nn.dens_SO);
         // H->H (no self), H->O
-        for (auto *h1 : Hvec) for (auto *h2 : Hvec) if (h1!=h2) maybe_connect(h1,h2,nn.dens_HH);
-        for (auto *h : Hvec) for (auto *o : Ovec) maybe_connect(h,o,nn.dens_HO);
+        for (auto &h1 : Hvec) for (auto &h2 : Hvec) if (h1!=h2) maybe_connect(h1,h2,nn.dens_HH);
+        for (auto &h : Hvec) for (auto &o : Ovec) maybe_connect(h,o,nn.dens_HO);
 
         if (Npool) {
-            for (auto *o : Ovec) { o->addConnection(+20.0f, *Npool); edges.push_back({o,Npool,true}); }
-            for (auto *o : Ovec) { Npool->addConnection(-25.0f, *o); edges.push_back({Npool,o,true}); }
+            for (auto &o : Ovec) { o->addConnection(+20.0f, Npool); edges.push_back({o,Npool,true}); }
+            for (auto &o : Ovec) { Npool->addConnection(-25.0f, o); edges.push_back({Npool,o,true}); }
         }
 
         // fan-in per target for init scaling
-        std::map<Neuron*, int> fanin;
+        std::map<std::shared_ptr<Neuron>, int> fanin;
         for (const auto &e : edges) { if (!e.is_pool_edge) fanin[e.to] += 1; }
 
         // Assign random weights
@@ -186,13 +184,13 @@ void Glia::configureNetworkFromFile(std::string filepath, bool verbose)
 
         // Sanitize: remove any accidental null-pointer connections before use
         int null_edge_count = 0;
-        for (auto *src : sensory_neurons) {
+        for (auto &src : sensory_neurons) {
             std::vector<std::string> bad;
             const auto &conns = src->getConnections();
             for (const auto &kv : conns) { if (kv.second.second == nullptr) { bad.push_back(kv.first); null_edge_count++; } }
             for (const auto &to_id : bad) src->removeConnection(to_id);
         }
-        for (auto *src : neurons) {
+        for (auto &src : neurons) {
             std::vector<std::string> bad;
             const auto &conns = src->getConnections();
             for (const auto &kv : conns) { if (kv.second.second == nullptr) { bad.push_back(kv.first); null_edge_count++; } }
@@ -216,14 +214,14 @@ void Glia::configureNetworkFromFile(std::string filepath, bool verbose)
         std::string cmd; iss >> cmd;
         if (cmd == "NEURON") {
             std::string id; float threshold, leak, resting; iss >> id >> threshold >> leak >> resting;
-            Neuron *neuron = getNeuronById(id);
+            auto neuron = getNeuronById(id);
             if (neuron) {
                 neuron->setThreshold(threshold);
                 neuron->setLeak(leak);
                 neuron->setResting(resting);
             } else {
                 int total_neurons = (int)(sensory_neurons.size() + neurons.size());
-                Neuron *new_neuron = new Neuron(id, total_neurons + 1, resting, leak, 4, threshold, true);
+                auto new_neuron = std::make_shared<Neuron>(id, total_neurons + 1, resting, leak, 4, threshold, true);
                 if (!id.empty() && id[0] == 'S') { sensory_neurons.push_back(new_neuron); sensory_mapping[id] = new_neuron; }
                 else { neurons.push_back(new_neuron); neuron_mapping[id] = new_neuron; }
                 if (verbose) {
@@ -254,7 +252,7 @@ void Glia::saveNetworkToFile(std::string filepath)
 
 	// Save sensory neurons
 	file << "# Sensory neurons\n";
-	for (auto *n : sensory_neurons)
+	for (const auto &n : sensory_neurons)
 	{
 		file << "NEURON " << n->getId() << " "
 			 << n->getThreshold() << " "
@@ -264,7 +262,7 @@ void Glia::saveNetworkToFile(std::string filepath)
 
 	// Save interneurons & outputs
 	file << "\n# Interneurons & Outputs\n";
-	for (auto *n : neurons)
+	for (const auto &n : neurons)
 	{
 		file << "NEURON " << n->getId() << " "
 			 << n->getThreshold() << " "
@@ -274,7 +272,7 @@ void Glia::saveNetworkToFile(std::string filepath)
 
 	// Save connections by iterating neuron objects directly
 	file << "\n# Connections\n";
-	for (auto *src : sensory_neurons)
+	for (const auto &src : sensory_neurons)
 	{
 		const auto &conns = src->getConnections();
 		for (const auto &kv : conns)
@@ -282,7 +280,7 @@ void Glia::saveNetworkToFile(std::string filepath)
 			file << "CONNECTION " << src->getId() << " " << kv.first << " " << kv.second.first << "\n";
 		}
 	}
-	for (auto *src : neurons)
+	for (const auto &src : neurons)
 	{
 		const auto &conns = src->getConnections();
 		for (const auto &kv : conns)
@@ -298,7 +296,7 @@ void Glia::saveNetworkToFile(std::string filepath)
 void Glia::printNetwork()
 {
 	// Print connections by reading directly from neuron objects
-	for (auto *n : sensory_neurons)
+	for (const auto &n : sensory_neurons)
 	{
 		std::cout << n->getId() << std::endl;
 		for (const auto &kv : n->getConnections())
@@ -306,7 +304,7 @@ void Glia::printNetwork()
 			std::cout << "\t" << n->getId() << ": --[" << kv.second.first << "]--> " << kv.first << std::endl;
 		}
 	}
-	for (auto *n : neurons)
+	for (const auto &n : neurons)
 	{
 		std::cout << n->getId() << std::endl;
 		for (const auto &kv : n->getConnections())
@@ -319,8 +317,8 @@ void Glia::printNetwork()
 void Glia::addConnection(std::string from_id, std::string to_id, float weight)
 {
     // get neuron objects
-    Neuron *from = nullptr;
-    Neuron *to = nullptr;
+    std::shared_ptr<Neuron> from = nullptr;
+    std::shared_ptr<Neuron> to = nullptr;
 
     // get "from" object based on prefix: S* is sensory, anything else is regular neuron
     if (!from_id.empty() && from_id[0] == 'S') {
@@ -346,7 +344,7 @@ void Glia::addConnection(std::string from_id, std::string to_id, float weight)
     }
 
     // add connection to neuron object
-    from->addConnection(weight, *to);
+    from->addConnection(weight, to);
 }
 
 // apply "stimuli" to sensory neurons
@@ -362,7 +360,7 @@ void Glia::injectSensory(const std::string &id, float amt)
 }
 
 // access neuron by ID (for configuration)
-Neuron* Glia::getNeuronById(const std::string &id)
+std::shared_ptr<Neuron> Glia::getNeuronById(const std::string &id)
 {
 	// Check sensory neurons first
 	auto it_s = sensory_mapping.find(id);
@@ -388,4 +386,141 @@ std::vector<std::string> Glia::getSensoryNeuronIDs() const
 		ids.push_back(kv.first);
 	}
 	return ids;
+}
+
+// ========== NumPy-Compatible Data Access Implementation ==========
+
+std::vector<std::string> Glia::getAllNeuronIDs() const
+{
+	std::vector<std::string> ids;
+	ids.reserve(sensory_neurons.size() + neurons.size());
+	
+	// Sensory neurons first
+	for (const auto &n : sensory_neurons) {
+		ids.push_back(n->getId());
+	}
+	// Then interneurons
+	for (const auto &n : neurons) {
+		ids.push_back(n->getId());
+	}
+	return ids;
+}
+
+void Glia::getState(std::vector<std::string> &ids,
+                    std::vector<float> &values,
+                    std::vector<float> &thresholds,
+                    std::vector<float> &leaks) const
+{
+	const size_t total = sensory_neurons.size() + neurons.size();
+	ids.clear(); ids.reserve(total);
+	values.clear(); values.reserve(total);
+	thresholds.clear(); thresholds.reserve(total);
+	leaks.clear(); leaks.reserve(total);
+	
+	// Collect from sensory neurons
+	for (const auto &n : sensory_neurons) {
+		ids.push_back(n->getId());
+		values.push_back(n->getValue());
+		thresholds.push_back(n->getThreshold());
+		leaks.push_back(n->getLeak());
+	}
+	
+	// Collect from interneurons
+	for (const auto &n : neurons) {
+		ids.push_back(n->getId());
+		values.push_back(n->getValue());
+		thresholds.push_back(n->getThreshold());
+		leaks.push_back(n->getLeak());
+	}
+}
+
+void Glia::setState(const std::vector<std::string> &ids,
+                    const std::vector<float> &thresholds,
+                    const std::vector<float> &leaks)
+{
+	if (ids.size() != thresholds.size() || ids.size() != leaks.size()) {
+		std::cerr << "Warning: setState() - size mismatch in input arrays" << std::endl;
+		return;
+	}
+	
+	for (size_t i = 0; i < ids.size(); ++i) {
+		auto n = getNeuronById(ids[i]);
+		if (n) {
+			n->setThreshold(thresholds[i]);
+			n->setLeak(leaks[i]);
+		}
+	}
+}
+
+void Glia::getWeights(std::vector<std::string> &from_ids,
+                      std::vector<std::string> &to_ids,
+                      std::vector<float> &weights) const
+{
+	from_ids.clear();
+	to_ids.clear();
+	weights.clear();
+	
+	// Count total connections for reservation
+	int total_conns = getConnectionCount();
+	from_ids.reserve(total_conns);
+	to_ids.reserve(total_conns);
+	weights.reserve(total_conns);
+	
+	// Collect from sensory neurons
+	for (const auto &src : sensory_neurons) {
+		const auto &conns = src->getConnections();
+		for (const auto &kv : conns) {
+			from_ids.push_back(src->getId());
+			to_ids.push_back(kv.first);
+			weights.push_back(kv.second.first);
+		}
+	}
+	
+	// Collect from interneurons
+	for (const auto &src : neurons) {
+		const auto &conns = src->getConnections();
+		for (const auto &kv : conns) {
+			from_ids.push_back(src->getId());
+			to_ids.push_back(kv.first);
+			weights.push_back(kv.second.first);
+		}
+	}
+}
+
+void Glia::setWeights(const std::vector<std::string> &from_ids,
+                      const std::vector<std::string> &to_ids,
+                      const std::vector<float> &weights)
+{
+	if (from_ids.size() != to_ids.size() || from_ids.size() != weights.size()) {
+		std::cerr << "Warning: setWeights() - size mismatch in input arrays" << std::endl;
+		return;
+	}
+	
+	for (size_t i = 0; i < from_ids.size(); ++i) {
+		auto from = getNeuronById(from_ids[i]);
+		auto to = getNeuronById(to_ids[i]);
+		
+		if (from && to) {
+			const auto &conns = from->getConnections();
+			if (conns.find(to_ids[i]) != conns.end()) {
+				// Connection exists, update weight
+				from->setTransmitter(to_ids[i], weights[i]);
+			} else {
+				// Create new connection
+				from->addConnection(weights[i], to);
+			}
+		}
+	}
+}
+
+int Glia::getConnectionCount() const
+{
+	int count = 0;
+	for (const auto &n : sensory_neurons) {
+		count += static_cast<int>(n->getConnections().size());
+	}
+	for (const auto &n : neurons) {
+		count += static_cast<int>(n->getConnections().size());
+	}
+	return count;
 }

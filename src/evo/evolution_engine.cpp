@@ -218,16 +218,16 @@ void EvolutionEngine::restoreNet(Glia &net, const NetSnapshot &s) const {
     });
     // Restore/add edges
     for (const auto &e : s.edges) {
-        Neuron *from = net.getNeuronById(e.from);
-        Neuron *to = net.getNeuronById(e.to);
+        auto from = net.getNeuronById(e.from);
+        auto to = net.getNeuronById(e.to);
         if (!from || !to) continue;
         const auto &conns = from->getConnections();
-        if (conns.find(e.to) == conns.end()) from->addConnection(e.w, *to);
+        if (conns.find(e.to) == conns.end()) from->addConnection(e.w, to);
         else from->setTransmitter(e.to, e.w);
     }
     // Restore neuron params
     for (const auto &r : s.neurons) {
-        Neuron *n = net.getNeuronById(r.id);
+        auto n = net.getNeuronById(r.id);
         if (!n) continue;
         n->setThreshold(r.thr);
         n->setLeak(r.leak);

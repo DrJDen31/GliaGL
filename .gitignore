@@ -1,4 +1,5 @@
 /build/
+venv/
 
 # Local build directories
 src/train/build/
@@ -59,3 +60,42 @@ examples/**/generate_tests
 # Project-specific run artifacts
 /digits_trained.net
 /digits_train_metrics.json
+
+# Python packaging
+dist/
+*.egg-info/
+.eggs/
+*.whl
+*.egg
+
+# Python build
+python/build/
+python/glia/_core*.so
+python/glia/_core*.pyd
+python/glia/_core*.dll
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation build
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+
+# Example outputs
+example_network.net
+trained_network.net
+*.png
+
+# Planning folder (Cascade working files)
+/planning/
