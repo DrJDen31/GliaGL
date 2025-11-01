@@ -53,36 +53,74 @@ print(f"Network has {len(weights)} connections")
 
 ## Training
 
+### Basic Training
+
 ```python
 import glia
 
-# Setup
+# Setup network
 net = glia.Network()
 net.load("network.net")
+
+# Create trainer (uses gradient-based learning by default)
 trainer = glia.Trainer(net)
 
-# Configure training
-config = glia.TrainingConfig()
-config.lr = 0.01
-config.batch_size = 4
-config.warmup_ticks = 50
-config.decision_window = 50
+# Configure training using helper
+config = glia.create_config(
+    lr=0.01,
+    batch_size=16,
+    warmup_ticks=50,
+    decision_window=50,
+    optimizer='adamw'  # 'sgd', 'adam', or 'adamw'
+)
 
-# Create dataset
-dataset = []
-for i in range(100):
-    seq = glia.InputSequence()
-    # ... setup sequence ...
-    dataset.append(glia.EpisodeData())
-    dataset[-1].seq = seq
-    dataset[-1].target_id = "O0"
+# Load or create dataset
+dataset = glia.load_dataset_from_directory("data/train")
 
-# Train
-trainer.train_epoch(dataset, epochs=100, config=config)
+# Train with learning rate scheduling
+history = trainer.train(
+    dataset.episodes,
+    epochs=20,
+    config=config,
+    lr_schedule='cosine',  # 'cosine', 'step', or None
+    verbose=True
+)
 
-# Get training history
-acc_history = trainer.get_epoch_acc_history()
-margin_history = trainer.get_epoch_margin_history()
+# Check results
+print(f"Final accuracy: {history['accuracy'][-1]:.2%}")
+print(f"Final margin: {history['margin'][-1]:.3f}")
+```
+
+### Learning Rate Scheduling
+
+```python
+# Cosine annealing (default) - smooth decay
+trainer.train(dataset.episodes, epochs=20, lr_schedule='cosine')
+
+# Step decay - drops by 50% every 1/3 of epochs
+trainer.train(dataset.episodes, epochs=20, lr_schedule='step')
+
+# Constant LR - no scheduling
+trainer.train(dataset.episodes, epochs=20, lr_schedule=None)
+```
+
+### Advanced Options
+
+```python
+# Use Hebbian/reinforcement learning instead of gradient descent
+trainer = glia.Trainer(net, use_gradient=False)
+
+# Custom epoch callback
+def on_epoch(epoch, acc, margin):
+    print(f"Epoch {epoch}: acc={acc:.2%}, margin={margin:.3f}")
+
+history = trainer.train(
+    dataset.episodes,
+    epochs=100,
+    config=config,
+    on_epoch=on_epoch,
+    lr_schedule='cosine'
+)
 ```
 
 ## Evolution

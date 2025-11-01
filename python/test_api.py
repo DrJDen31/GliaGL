@@ -57,11 +57,11 @@ def test_trainer_wrapper():
     trainer = glia.Trainer(net)
     print(f"✓ Created: {trainer}")
     
-    # Config property
-    config = trainer.config
-    config.lr = 0.02
-    trainer.config = config
-    assert trainer.config.lr == 0.02
+    # Config property - test that we can get and modify config
+    original_lr = trainer.config.lr
+    trainer.config.lr = 0.02
+    assert abs(trainer.config.lr - 0.02) < 1e-6, f"Expected lr≈0.02, got {trainer.config.lr}"
+    trainer.config.lr = original_lr  # Restore
     print(f"✓ Config property works")
     
     # History
@@ -125,15 +125,15 @@ def test_config_helpers():
     
     print("\n[Config Helpers]")
     
-    # Training config
+    # Training config - test that parameters are properly set
     cfg = glia.create_config(
-        lr=0.01,
+        lr=0.015,  # Use non-default value to ensure it's actually set
         batch_size=4,
         warmup_ticks=100
     )
-    assert cfg.lr == 0.01
-    assert cfg.batch_size == 4
-    assert cfg.warmup_ticks == 100
+    assert abs(cfg.lr - 0.015) < 1e-6, f"Expected lr≈0.015, got {cfg.lr}"
+    assert cfg.batch_size == 4, f"Expected batch_size=4, got {cfg.batch_size}"
+    assert cfg.warmup_ticks == 100, f"Expected warmup_ticks=100, got {cfg.warmup_ticks}"
     print(f"✓ create_config() works")
     
     # Evolution config

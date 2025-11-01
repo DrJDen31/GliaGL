@@ -16,10 +16,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NumPy integration with zero-copy data access
 - GIL release during compute-heavy operations
 - Comprehensive documentation and examples
+- **RateGDTrainer** bindings for gradient-based supervised learning
+- **Learning rate scheduling** with cosine annealing and step decay
+- Per-epoch training progress display with dynamic LR tracking
 
 ### Changed
 - Refactored C++ core to use std::shared_ptr for memory safety
 - Reorganized headers into public API (include/glia/) and implementation (src/)
+- **Trainer now uses gradient-based learning by default** (was Hebbian)
+- **Training progress shows per-epoch status** instead of cumulative bar
+- Updated documentation to reflect gradient training and LR scheduling
+
+### Fixed
+- Training accuracy improved from ~10% (random) to **82-84%** after fixing trainer selection
+- Missing C++ config parameters now properly exposed to Python
+- Test suite updated to handle config object behavior correctly
 
 ## [0.1.0] - 2025-01-XX
 

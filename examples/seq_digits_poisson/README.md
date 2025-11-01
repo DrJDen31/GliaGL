@@ -39,16 +39,19 @@ data/
 ### Using Python (Recommended)
 
 ```bash
-# Train on digit sequences
-python train_digits.py --net nets/readout.net --data data --epochs 10
+# Quick training with defaults (cosine LR schedule, AdamW optimizer)
+python train_digits.py --epochs 20
 
-# With custom parameters
+# High accuracy with longer training
+python train_digits.py --epochs 20 --lr 0.05 --batch-size 32
+
+# Custom network and parameters
 python train_digits.py \
-    --net nets/readout.net \
-    --data data \
+    --net nets/readout_hidden.net \
     --epochs 20 \
     --batch-size 32 \
-    --lr 0.02 \
+    --lr 0.05 \
+    --lr-schedule cosine \
     --save nets/my_trained_model.net
 ```
 
@@ -88,17 +91,43 @@ Hidden layer architecture:
 python train_digits.py --help
 
 Options:
-  --net PATH          Network file (default: nets/readout.net)
-  --data PATH         Data root directory (default: data)
-  --epochs N          Training epochs (default: 10)
-  --batch-size N      Batch size (default: 16)
-  --lr FLOAT          Learning rate (default: 0.01)
-  --warmup N          Warmup ticks (default: 20)
-  --eval-ticks N      Evaluation window (default: 80)
-  --save PATH         Save trained network (default: nets/digits_trained.net)
-  --results PATH      Results directory (default: results)
-  --seed N            Random seed (default: 42)
-  --verbose           Verbose evaluation output
+  --net PATH            Network file (default: nets/readout.net)
+  --data PATH           Data root directory (default: data)
+  --epochs N            Training epochs (default: 10)
+  --batch-size N        Batch size (default: 16)
+  --lr FLOAT            Initial learning rate (default: 0.01)
+  --lr-schedule MODE    LR schedule: cosine, step, or none (default: cosine)
+  --optimizer TYPE      Optimizer: sgd, adam, or adamw (default: adamw)
+  --warmup N            Warmup ticks (default: 5)
+  --decision-window N   Decision window ticks (default: 35)
+  --save PATH           Save trained network (default: nets/digits_trained.net)
+  --results PATH        Results directory (default: results)
+  --seed N              Random seed (default: 42)
+  --verbose             Verbose evaluation output
+```
+
+### Learning Rate Scheduling
+
+The trainer now includes **automatic learning rate scheduling** for better convergence:
+
+**Cosine Annealing** (default):
+- Smooth decay from initial LR to 0.01× initial
+- Best for stable convergence with fine-tuning
+```bash
+python train_digits.py --epochs 20 --lr 0.05 --lr-schedule cosine
+```
+
+**Step Decay**:
+- Reduces LR by 50% every 1/3 of epochs
+- More aggressive, good for exploration then refinement
+```bash
+python train_digits.py --epochs 15 --lr 0.05 --lr-schedule step
+```
+
+**Constant LR**:
+- No scheduling, keeps initial LR throughout
+```bash
+python train_digits.py --epochs 10 --lr 0.02 --lr-schedule none
 ```
 
 ---
@@ -131,10 +160,19 @@ O2,O7,False,0.012
 ```
 
 ### Console Output
-- Training progress per epoch
+
+Training shows per-epoch progress with dynamic learning rate:
+```
+Epoch  1/20 [LR=0.050000]  →  Acc: 54.81%, Margin: 0.070
+Epoch  2/20 [LR=0.049695]  →  Acc: 71.34%, Margin: 0.104
+...
+Epoch 20/20 [LR=0.000805]  →  Acc: 84.36%, Margin: 0.217
+```
+
+After training:
 - Confusion matrix
-- Per-digit accuracy
-- Overall metrics
+- Per-digit accuracy breakdown
+- Overall metrics (test accuracy, improvement)
 
 ---
 
@@ -142,15 +180,24 @@ O2,O7,False,0.012
 
 ### Typical Performance
 
-| Network | Epochs | Test Accuracy | Training Time |
-|---------|--------|---------------|---------------|
-| readout | 10 | ~85-90% | ~2-5 minutes |
-| readout_hidden | 20 | ~90-95% | ~10-20 minutes |
+With gradient-based training (RateGDTrainer) and LR scheduling:
+
+| Network | Epochs | LR | Schedule | Test Accuracy | Training Time |
+|---------|--------|-----|----------|---------------|---------------|
+| readout | 20 | 0.01 | cosine | ~82-83% | ~1-2 minutes |
+| readout | 20 | 0.05 | cosine | ~83-84% | ~1-2 minutes |
+| readout_hidden | 20 | 0.05 | cosine | ~85-90% | ~5-10 minutes |
+
+**Key improvements:**
+- **Gradient descent** (default): Faster, more stable than Hebbian learning
+- **LR scheduling**: Enables higher initial LR without divergence
+- **AdamW optimizer** (default): Adaptive learning rates per parameter
 
 Performance varies with:
-- Learning rate
+- Learning rate and schedule
 - Batch size
 - Network initialization
+- Optimizer choice (SGD, Adam, AdamW)
 - Sequence encoding quality
 
 ---
