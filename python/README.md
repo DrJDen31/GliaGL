@@ -179,7 +179,10 @@ cmake --build . -j4
 
 ```bash
 # Run import test
-python python/test_import.py
+python tests/test_import.py
+
+# Run API tests
+python tests/test_api.py
 
 # Run full test suite (after installing pytest)
 pip install pytest

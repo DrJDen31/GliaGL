@@ -199,8 +199,8 @@ cd GliaGL
 pip install -e ".[dev]"
 
 # Run tests
-python python/test_import.py
-python python/test_api.py
+python tests/test_import.py
+python tests/test_api.py
 
 # Build and test
 bash scripts/build_local.sh

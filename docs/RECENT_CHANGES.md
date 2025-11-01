@@ -128,22 +128,38 @@ trainer = glia.Trainer(net, use_gradient=False)
 
 ## Testing
 
-### Fixed Issues
+### Reorganization
+- **Moved all test files to `tests/` directory** for cleaner root folder
+- Test files now use ASCII-safe markers (`[OK]`, `[FAIL]`) instead of Unicode symbols
+- Fixed Windows CI encoding issues with UTF-8 stdout wrapper
+- Updated GitHub Actions workflows to use new test paths
 
-- Updated `python/test_api.py` to handle floating-point precision
+### Fixed Issues
+- Updated test suite to handle floating-point precision
 - All 6 test suites now pass (previously 2 failed)
 - Added better error messages with approximate comparisons
+- Fixed Unicode encoding errors that caused CI failures on Windows
+
+### Test Structure
+```
+tests/
+├── README.md                    # Test documentation
+├── test_import.py              # Import and basic binding tests
+├── test_api.py                 # High-level API tests
+├── test_comprehensive.py       # Comprehensive functionality tests
+├── test_optimizer_bindings.py  # Optimizer tests
+└── test_quick.py               # Quick sanity checks
+```
 
 ### Test Results
-
 ```
 Results: 6 passed, 0 failed
-✓ Network Wrapper PASSED
-✓ Trainer Wrapper PASSED
-✓ Dataset PASSED
-✓ Config Helpers PASSED
-✓ File I/O PASSED
-✓ Evolution Wrapper PASSED
+[PASS] Network Wrapper
+[PASS] Trainer Wrapper
+[PASS] Dataset
+[PASS] Config Helpers
+[PASS] File I/O
+[PASS] Evolution Wrapper
 ```
 
 ---

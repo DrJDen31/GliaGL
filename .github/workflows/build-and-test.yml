@@ -37,11 +37,11 @@ jobs:
     
     - name: Run import tests
       run: |
-        python python/test_import.py
+        python tests/test_import.py
     
     - name: Run API tests
       run: |
-        python python/test_api.py
+        python tests/test_api.py
     
     - name: Run pytest
       run: |
@@ -72,8 +72,8 @@ jobs:
     
     - name: Run tests
       run: |
-        python python/test_import.py
-        python python/test_api.py
+        python tests/test_import.py
+        python tests/test_api.py
 
   test-windows:
     runs-on: windows-latest
@@ -100,8 +100,8 @@ jobs:
     
     - name: Run tests
       run: |
-        python python/test_import.py
-        python python/test_api.py
+        python tests/test_import.py
+        python tests/test_api.py
 
   lint:
     runs-on: ubuntu-latest

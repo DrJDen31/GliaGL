@@ -26,11 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Trainer now uses gradient-based learning by default** (was Hebbian)
 - **Training progress shows per-epoch status** instead of cumulative bar
 - Updated documentation to reflect gradient training and LR scheduling
+- **Reorganized test files** into `tests/` directory for cleaner root folder
 
 ### Fixed
 - Training accuracy improved from ~10% (random) to **82-84%** after fixing trainer selection
 - Missing C++ config parameters now properly exposed to Python
 - Test suite updated to handle config object behavior correctly
+- **Unicode encoding errors in tests** fixed for Windows CI compatibility (using ASCII markers)
 
 ## [0.1.0] - 2025-01-XX
 
